@@ -2015,6 +2015,27 @@ function drawBigPlan(){
     g.fillStyle='#86868b';g.fillText(String(i+1),gx0,py);});
   g.restore();
 
+  /* Zoomed view of the same unit plan the thumbnails show. Drawing the bay
+     assignment here instead would put a different layout on screen the moment
+     the reader zoomed in. The wall-editing tools act on bay edges, so they are
+     held back until they are rebuilt against units; the plan below is read-only. */
+  const bigPlan = state.plan && state.plan[lvl];
+  if (bigPlan && bigPlan.rooms.length){
+    drawUnitPlan(g, bigPlan, P, k, true);
+    g.save();
+    g.textAlign='left'; g.textBaseline='alphabetic';
+    g.font='600 12px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    const useName = USE_LABEL[pg.floorUse[lvl]] || pg.floorUse[lvl];
+    g.fillText(`Level ${lvl+1} \u00b7 ${useName}`, 16, size-28);
+    g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    const nU = bigPlan.rooms.filter(r=>!r.isCore && r.target).length;
+    g.fillText(`${bigPlan.typology} plan \u00b7 ${nU} units \u00b7 `
+      + `${fmt(Math.round(bigPlan.net))} sq ft net \u00b7 `
+      + `${Math.round(bigPlan.circ/bigPlan.gross*100)}% circulation`, 16, size-14);
+    g.restore();
+    return;
+  }
+
   // bay washes
   for (const id of (vg.byStory[lvl]||[])){
     const v = vg.voxels[id], a = A[id];
@@ -2455,6 +2476,31 @@ function markEdited(){ state.mEdited=true; }
 function redrawEditor(){ drawBigPlan(); paintRoomList(); }
 function paintRoomList(){
   const pg=state.pg, g=state.mAreas||{};
+
+  /* List the units the plan actually shows. Grouped by type, because a
+     thirty-row list of individual flats is a worse answer to "what is on this
+     level" than "7 x 1 Bed, 5 x 2 Bed". */
+  const up = state.plan && state.plan[state.mLvl];
+  if (up && up.rooms.length){
+    const by = new Map();
+    for (const r of up.rooms){
+      const k = r.label;
+      const e = by.get(k) || { label:r.label, use:r.use, n:0, area:0 };
+      e.n++; e.area += r.area; by.set(k, e);
+    }
+    by.set('__circ', { label:'Circulation', use:'corridor', n:1, area:up.circ });
+    $('mRooms').innerHTML = [...by.values()]
+      .sort((a,b)=>b.area-a.area)
+      .map(e=>`<div class="mrow">
+        <i style="background:${USE_COL[e.use]||'#c7c7cc'}"></i>
+        <span>${e.n>1?e.n+' \u00d7 ':''}${e.label}</span>
+        <b>${fmt(Math.round(e.area))}</b></div>`).join('')
+      + `<p class="sub" style="margin-top:10px">Units are laid out by frontage
+         along the corridor. The wall tools act on the old bay grid and are
+         being rebuilt for this plan \u2014 the drawing is read-only for now.</p>`;
+    return;
+  }
+
   const ids=(pg.byStory[state.mLvl]||[]).filter(rid=>(state.mAreas||{})[rid]);
   $('mRooms').innerHTML = ids.map(rid=>{
     const r=pg.rooms[rid], o=g[rid];
@@ -2543,7 +2589,7 @@ const USE_LABEL = { apartment:'Residential', studio:'Studios', office:'Office',
 const state = {
   site: DEFAULT_PLOT(), mix: DEFAULT_MIX(), vg:null, pg:null, options:[], pick:0,
   floor:-1, cfg:null, reveal:1, view:'site', tool:'select',
-  ratio:4, stack:['retail','restaurant'], paint:'apartment', painting:false, size:null,
+  ratio:4, stack:['retail','apartment'], paint:'apartment', painting:false, size:null,
   style:'curtain', material:'concrete', massing:'taper', entrances:[], entHover:-1, dimHits:[], dimEdit:-1,
   img:null, imgOp:0.55, cal:null, loc:'',
   edits:{}, _eff:null, mLvl:0, mTool:'sel', mRoom:null, mHot:null, mPaint:false,
@@ -3407,16 +3453,43 @@ function paint3D(){
   const SLAB=1.0, BEAM=1.7, colS=Math.max(1.4,Math.min(2.4,cfg.bay*0.085));
   let gc=0;
 
-  // enclosure: a full bay wide, so the wall face is flush outside the frame
-  for (const v of vg.voxels){
-    if (state.floor>=0 && v.s!==state.floor) continue;
-    const rid=assign?assign[v.id]:-1;
-    if (rid===-1) continue;
-    if (!(state.reveal>=1||shown.has(v.id))) continue;
-    const t = entIds.has(v.id) ? 'entrance' : pg.rooms[rid].type;
-    setM(v.x+v.w/2-cx, v.s*FH+SLAB+(FH-SLAB)/2, v.y+v.d/2-cz,
-         v.w, FH-SLAB, v.d, twistAt(v.s));
-    groups[t].setMatrixAt(counts[t]++,_m);
+  /* Enclosure. Built from the unit plans so the colours in the massing are the
+     same rooms the floor plans show; extruding bays would paint a layout that
+     no longer exists. The structural frame and slabs below still come off the
+     bay grid, which is what actually carries the building. */
+  const uplans = state.plan;
+  const revealTo = state.reveal>=1 ? cfg.stories : Math.ceil(cfg.stories*state.reveal);
+  if (uplans && uplans.some(Boolean)){
+    for (let st=0; st<cfg.stories; st++){
+      if (state.floor>=0 && st!==state.floor) continue;
+      if (state.floor<0 && st>=revealTo) continue;
+      const pl = uplans[st]; if(!pl) continue;
+      const ents = (st===0) ? entranceList() : [];
+      for (const r of pl.rooms.concat(pl.corridor)){
+        let t = r.use;
+        if (ents.length && st===0){
+          const e = ents.find(e=>{ const v=vg.voxels[e.id];
+            return v && v.x < r.x+r.w-0.5 && r.x < v.x+v.w-0.5
+                     && v.y < r.y+r.d-0.5 && r.y < v.y+v.d-0.5; });
+          if (e) t = 'entrance';
+        }
+        if (!groups[t]) t = 'mech';
+        setM(r.x+r.w/2-cx, st*FH+SLAB+(FH-SLAB)/2, r.y+r.d/2-cz,
+             r.w, FH-SLAB, r.d, twistAt(st));
+        groups[t].setMatrixAt(counts[t]++,_m);
+      }
+    }
+  } else {
+    for (const v of vg.voxels){
+      if (state.floor>=0 && v.s!==state.floor) continue;
+      const rid=assign?assign[v.id]:-1;
+      if (rid===-1) continue;
+      if (!(state.reveal>=1||shown.has(v.id))) continue;
+      const t = entIds.has(v.id) ? 'entrance' : pg.rooms[rid].type;
+      setM(v.x+v.w/2-cx, v.s*FH+SLAB+(FH-SLAB)/2, v.y+v.d/2-cz,
+           v.w, FH-SLAB, v.d, twistAt(v.s));
+      groups[t].setMatrixAt(counts[t]++,_m);
+    }
   }
   for(const t in USE_COL){ groups[t].count=counts[t]; groups[t].instanceMatrix.needsUpdate=true; }
   ghost.count=gc; ghost.instanceMatrix.needsUpdate=true;
@@ -3430,6 +3503,10 @@ function paint3D(){
     for (const id of bays){
       if (assign && assign[id]===-1) continue;   // not part of the building
       const v = vg.voxels[id];
+      // a bay sitting in the light well gets no floor, or the void reads solid
+      const ct = state.plan && state.plan[st] && state.plan[st].court;
+      if (ct && v.x >= ct.x-0.5 && v.x+v.w <= ct.x+ct.w+0.5
+             && v.y >= ct.y-0.5 && v.y+v.d <= ct.y+ct.d+0.5) continue;
       // the floor of this level
       setM(v.x+v.w/2-cx, st*FH+SLAB/2, v.y+v.d/2-cz, v.w+0.7, SLAB, v.d+0.7, twistAt(st));
       slabMass.setMatrixAt(si++,_m);
@@ -3896,6 +3973,15 @@ function drawPlan(cv, lvl, size, detail){
     g.restore();
   }
 
+  /* The planner lays units by frontage, so the plan is a set of rectangles
+     rather than a colouring of bays. Draw those and we are done. */
+  const uplan = state.plan && state.plan[lvl];
+  if (uplan && uplan.rooms.length){
+    drawUnitPlan(g, uplan, P, k, detail);
+    if (detail) planFooter(g, lvl, size);
+    return;
+  }
+
   /* --- room washes --- */
   for (const id of cells){
     const v = vg.voxels[id], rid = assign[id];
@@ -4148,6 +4234,44 @@ function paintPlans(){
 function schedule(){
   const {vg,pg,cfg}=state, opt=state.options[state.pick];
   if(!vg||!opt) return null;
+
+  /* Read the unit plans, not the bay assignment. The two used to be the same
+     thing; now the planner cuts units by frontage and the bay grid only carries
+     the structure, so totting up bays would describe a plan nobody is looking
+     at. A courtyard is a void, not floor, so it is taken out of the gross. */
+  if (state.plan && state.plan.some(Boolean)){
+    const byType={}, byFloor=[];
+    let gfa=0, net=0;
+    for(let s=0;s<cfg.stories;s++) byFloor[s]={gfa:0,net:0,core:0,units:0};
+    state.plan.forEach((p,s)=>{
+      if(!p || !byFloor[s]) return;
+      const floorGfa = p.gross - p.voidA;
+      byFloor[s].gfa = floorGfa; gfa += floorGfa;
+      for (const r of p.rooms){
+        const leasable = LEASABLE.has(r.use) && !r.isCore;
+        const key = (r.isCore ? 'core|' : 'unit|') + r.use + '|' + r.label;
+        (byType[key] ||= { name:r.label, use:r.use, unit:leasable,
+                           count:0, area:0, target:0 });
+        byType[key].count++; byType[key].area += r.area;
+        byType[key].target += (r.target || r.area);
+        if (leasable){ byFloor[s].net += r.area; net += r.area; byFloor[s].units++; }
+        else byFloor[s].core += r.area;
+      }
+      const circ = p.circ;
+      byType['core|corridor|Circulation'] ||=
+        { name:'Circulation', use:'corridor', unit:false, count:0, area:0, target:0 };
+      byType['core|corridor|Circulation'].count++;
+      byType['core|corridor|Circulation'].area += circ;
+      byType['core|corridor|Circulation'].target += circ;
+      byFloor[s].core += circ;
+    });
+    const rows=Object.values(byType).sort((a,b)=> (b.unit-a.unit) || (b.area-a.area));
+    const z = state.size || sizeNow();
+    return { rows, byFloor, gfa, net, bay:cfg.bay*cfg.bay, plot:plotArea(),
+      far:gfa/plotArea(), eff:gfa?net/gfa:0,
+      allowed:z.allowed, used:z.allowed?gfa/z.allowed:0, bind:z.bind, storeys:z.storeys };
+  }
+
   const assign=effAssign();
   const byRoom={}, byType={}, byFloor=[];
   for(let s=0;s<cfg.stories;s++) byFloor[s]={gfa:0,net:0,core:0,units:0};
@@ -4351,6 +4475,431 @@ function showView(v){
 function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggle('on',!!m); }
 function invalidate(){ if(state.options.length) flag('Inputs changed \u2014 generate again'); }
 
+/* ============ unit planner ============ */
+/* ============================================================================
+   Frontage-based unit planner.
+
+   The old planner assembled rooms out of whole structural bays, so a 22 ft bay
+   was 484 sq ft and a 620 sq ft apartment simply could not be expressed. This
+   one works the way a building actually gets laid out: a corridor is struck
+   through the plate, the leftover depth becomes a band of units, and the band
+   is cut into units by FRONTAGE along its length. Frontage is continuous, so a
+   unit lands on its target area to within a few per cent.
+
+   Everything here is pure geometry in the building's own grid frame. No DOM.
+   ========================================================================== */
+
+/* ---- international-standard dimensions, all in feet ---------------------- */
+const STD = {
+  corridor:      6.0,   // IBC min 44" for <50 occupants; 5'-6"-6'-0" is normal
+  corridorRetail:8.0,   // rear service/mall corridor runs wider
+  aptDepth:     32.0,   // 30-34 ft: deeper than ~36 and back rooms lose daylight
+  shopDepth:    30.0,   // retail 2:1 to 3:1 depth:frontage
+  minCourt:     15.0,   // below this a light well stops working, so no courtyard
+  minBand:      22.0,   // shallowest band that still makes a usable unit
+  liftW:         8.5,   // 8'-6" shaft
+  stairW:       11.0,   // two flights plus landing
+};
+
+/* min/max are the areas the name still honestly describes. A 944 sq ft flat is
+   a 2 bed, whatever the solver had to stretch to fill the run. */
+const TYPES = {
+  apt1:  { key:'apt1',  use:'apartment', label:'1 Bed', target: 650, min: 540, max: 790, minFront:18 },
+  apt2:  { key:'apt2',  use:'apartment', label:'2 Bed', target: 950, min: 820, max:1180, minFront:24 },
+  shopS: { key:'shopS', use:'retail',    label:'Small shop', target: 550, min: 440, max: 740, minFront:14 },
+  shopL: { key:'shopL', use:'retail',    label:'Large shop', target:1000, min: 760, max:1320, minFront:26 },
+};
+
+const overlaps = (a, b) =>
+  a.x < b.x + b.w - 0.01 && b.x < a.x + a.w - 0.01 &&
+  a.y < b.y + b.d - 0.01 && b.y < a.y + a.d - 0.01;
+
+/* ---------------------------------------------------------------------------
+   Cut one straight run of band into units.
+
+   Pick how many of each of the two types fit, preferring the mix ratio, then
+   stretch the frontages uniformly so the run fills exactly — which is what an
+   architect does when tuning unit widths to a structural bay.
+--------------------------------------------------------------------------- */
+function cutRun(len, depth, tA, tB, mix){
+  if (len < Math.min(tA.minFront, tB.minFront) || depth <= 0) return null;
+  const fA = tA.target / depth, fB = tB.target / depth;
+
+  /* Search both counts outright. Deriving one from the other and rounding it
+     misses valid answers: a 30 ft run of 30 ft deep retail is one 915 sq ft
+     shop, but rounding asked for two and rejected them as too narrow. */
+  let best = null;
+  const maxA = Math.floor(len / tA.minFront), maxB = Math.floor(len / tB.minFront);
+  for (let a = 0; a <= maxA; a++){
+    for (let b = 0; b <= maxB; b++){
+      const n = a + b; if (!n) continue;
+      if (a * tA.minFront + b * tB.minFront > len + 0.01) break;
+      const scale = len / (a * fA + b * fB);
+      const wA = fA * scale, wB = fB * scale;
+      const arA = wA * depth, arB = wB * depth;
+      // a unit has to stay inside the band its name promises
+      if (a && (arA < tA.min || arA > tA.max)) continue;
+      if (b && (arB < tB.min || arB > tB.max)) continue;
+      const errA = a ? Math.abs(arA - tA.target) / tA.target : 0;
+      const errB = b ? Math.abs(arB - tB.target) / tB.target : 0;
+      const score = (a * errA + b * errB) / n + Math.abs(a / n - mix) * 0.25;
+      if (!best || score < best.score) best = { a, b, wA, wB, score };
+    }
+  }
+  /* Nothing satisfied the caps — a short leftover beside the core, usually.
+     Leaving it empty would punch a hole in the floor, which is worse than an
+     unusual unit, so fill it with as many equal units as fit and name each by
+     whichever type its final area is closest to. */
+  if (!best){
+    const n = Math.max(1, Math.round(len / ((tA.target + tB.target) / 2 / depth)));
+    const front = len / n;
+    if (front < Math.min(tA.minFront, tB.minFront) * 0.8) return null;
+    const area = front * depth;
+    const t = Math.abs(area - tA.target) < Math.abs(area - tB.target) ? tA : tB;
+    return Array.from({ length: n }, () => [t, front]);
+  }
+
+  // Interleave the types so every floor offers a range and the plan reads well.
+  const seq = []; let a = best.a, b = best.b;
+  while (a || b){
+    if (a && (!b || a / (a + b) >= mix)) { seq.push([tA, best.wA]); a--; }
+    else { seq.push([tB, best.wB]); b--; }
+  }
+  return seq;
+}
+
+/* A run of band: origin, direction, depth. `flip` hangs the band on the far
+   side of the origin line. Segments are cut around anything reserved on it. */
+function layRun(run, segs, tA, tB, mix, out){
+  for (const [t0, len] of segs){
+    const seq = cutRun(len, run.depth, tA, tB, mix);
+    if (!seq) continue;
+    let t = t0;
+    for (const [type, front] of seq){
+      const horiz = run.axis === 'x';
+      const w = horiz ? front : run.depth;
+      const dd = horiz ? run.depth : front;
+      out.push({
+        x: horiz ? run.x + t : (run.flip ? run.x - run.depth : run.x),
+        y: horiz ? (run.flip ? run.y - run.depth : run.y) : run.y + t,
+        w, d: dd, area: w * dd,
+        use: type.use, label: type.label, typeKey: type.key, target: type.target,
+      });
+      t += front;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Lay out one storey.
+     plate: {x,y,w,d} buildable envelope in grid coords
+     kind:  'residential' | 'retail'
+   Returns { rooms, corridor, court, core, typology }
+--------------------------------------------------------------------------- */
+/* Skeleton for one typology: the band runs, the corridor, the light well.
+   Returns null when the plate cannot carry that typology at all. */
+function unitSkeleton(typ, plate, depth, cw){
+  const { x, y, w, d } = plate, short = Math.min(w, d);
+  const corridor = [], back = [];
+  let court = null, runs = [];
+
+  if (typ === 'courtyard'){
+    /* Units round the perimeter, corridor ring behind them, daylit void in
+       the middle. The right answer for a deep plate: a central corridor alone
+       would leave an unlit slab of floor nobody can use.
+
+       The north and south corridor runs go the FULL width of the plate rather
+       than stopping at the ring's corners. With the ring inset on all four
+       sides a corner unit's inner edge falls outside every corridor run and
+       can only be reached through its neighbour. Running the corridor wall to
+       wall is both how it is actually built and what makes every unit on the
+       floor directly reachable. */
+    const bd = Math.min(depth, (short - 2*cw - STD.minCourt) / 2);
+    if (bd < STD.minBand) return null;
+    const sideY = y + bd + cw, sideLen = d - 2*(bd + cw);
+    if (sideLen < STD.minBand) return null;     // sides too short to hold units
+    runs = [
+      { tag:'N', x:x,     y:y,     len:w,       depth:bd, axis:'x', flip:false },
+      { tag:'S', x:x,     y:y + d, len:w,       depth:bd, axis:'x', flip:true  },
+      { tag:'W', x:x,     y:sideY, len:sideLen, depth:bd, axis:'y', flip:false },
+      { tag:'E', x:x + w, y:sideY, len:sideLen, depth:bd, axis:'y', flip:true  },
+    ];
+    corridor.push({ x, y: y + bd,          w, d: cw, use:'circulation' });
+    corridor.push({ x, y: y + d - bd - cw, w, d: cw, use:'circulation' });
+    corridor.push({ x: x + bd,          y:sideY, w: cw, d: sideLen, use:'circulation' });
+    corridor.push({ x: x + w - bd - cw, y:sideY, w: cw, d: sideLen, use:'circulation' });
+    court = { x: x + bd + cw, y: sideY, w: w - 2*(bd + cw), d: sideLen };
+    return { runs, corridor, court };
+  }
+
+  if (typ === 'bar'){
+    /* Corridor down the middle, units both sides, every one with an external
+       wall. Depth the bands cannot use widens the corridor rather than being
+       left as a dead strip. */
+    /* Both bands share whatever depth is left once the corridor is taken.
+       A back-of-house strip between corridor and far band was tried and cut
+       that band off from the corridor, so the slack goes to the units. Past
+       about 1.4x the daylight depth a bar stops making sense and the plate
+       belongs to the courtyard instead. */
+    const band = (short - cw) / 2;
+    if (band < STD.minBand || band > depth * 1.4) return null;
+    const cwB = cw, alongX = w >= d;
+    if (alongX){
+      runs = [{ tag:'N', x:x, y:y,     len:w, depth:band, axis:'x', flip:false },
+              { tag:'S', x:x, y:y + d, len:w, depth:band, axis:'x', flip:true  }];
+      corridor.push({ x, y: y + band, w, d: cwB, use:'circulation' });
+    } else {
+      runs = [{ tag:'W', x:x,     y:y, len:d, depth:band, axis:'y', flip:false },
+              { tag:'E', x:x + w, y:y, len:d, depth:band, axis:'y', flip:true  }];
+      corridor.push({ x: x + band, y, w: cwB, d, use:'circulation' });
+    }
+    return { runs, corridor, court:null };
+  }
+
+  /* Single-loaded: narrow plate, one band, corridor along the back. Leftover
+     depth goes to the units, not the corridor — widening the corridor to
+     swallow it sent circulation past a third of the floor on small plates. */
+  const band = Math.max(0, short - cw);
+  if (band < STD.minBand * 0.6) return null;
+  const alongX = w >= d;
+  if (alongX){
+    runs = [{ tag:'N', x:x, y:y, len:w, depth:band, axis:'x', flip:false }];
+    corridor.push({ x, y: y + band, w, d: cw, use:'circulation' });
+  } else {
+    runs = [{ tag:'W', x:x, y:y, len:d, depth:band, axis:'y', flip:false }];
+    corridor.push({ x: x + band, y, w: cw, d, use:'circulation' });
+  }
+  return { runs, corridor, court:null };
+}
+
+/* Fill one skeleton: reserve the core, then cut every run into units. */
+function fillSkeleton(sk, plate, tA, tB, mix, nLifts, nStair){
+  const { runs, corridor, court } = sk;
+  const rooms = (sk.back || []).slice(), core = [];
+
+  /* Reserve the core BEFORE cutting. Carving it out afterwards either overlaps
+     a unit or leaves a hole; reserving keeps the floor filling exactly. Always
+     the longest run at the same fraction along it, so the shaft stacks. */
+  const coreLen = nLifts * STD.liftW + nStair * STD.stairW;
+  const host = runs.slice().sort((a,b)=>b.len-a.len)[0];
+  const reserved = new Map(runs.map(r => [r.tag, []]));
+  if (host && coreLen > 0 && host.len >= coreLen + 2*tB.minFront){
+    const t0 = Math.round(((host.len - coreLen) / 2) * 100) / 100;
+    reserved.set(host.tag, [[t0, coreLen]]);
+    const horiz = host.axis === 'x';
+    let t = t0;
+    const push = (label, wide) => {
+      const cwid = horiz ? wide : host.depth, cdep = horiz ? host.depth : wide;
+      core.push({
+        x: horiz ? host.x + t : (host.flip ? host.x - host.depth : host.x),
+        y: horiz ? (host.flip ? host.y - host.depth : host.y) : host.y + t,
+        w: cwid, d: cdep, area: cwid * cdep, use:'services', label, isCore:true,
+      });
+      t += wide;
+    };
+    for (let i = 0; i < nLifts; i++) push('Lift',  STD.liftW);
+    for (let i = 0; i < nStair; i++) push('Stair', STD.stairW);
+  }
+
+  for (const run of runs){
+    const res = (reserved.get(run.tag) || []).slice().sort((a,b)=>a[0]-b[0]);
+    const segs = []; let cur = 0;
+    for (const [t0, len] of res){ if (t0 - cur > 0.5) segs.push([cur, t0 - cur]); cur = t0 + len; }
+    if (run.len - cur > 0.5) segs.push([cur, run.len - cur]);
+    layRun(run, segs, tA, tB, mix, rooms);
+  }
+  rooms.push(...core);
+  return { rooms, corridor, court, core, plate };
+}
+
+/* ---------------------------------------------------------------------------
+   Lay out one storey.
+     plate: {x,y,w,d} buildable envelope in grid coords
+     kind:  'residential' | 'retail'
+
+   Every typology the plate can carry is built and scored, and the best one
+   wins. Picking by threshold alone kept choosing a courtyard for small plates,
+   where the ring eats the floor and circulation runs past a fifth of it.
+--------------------------------------------------------------------------- */
+function planStorey(plate, kind, opts = {}){
+  const retail = kind === 'retail';
+  const depth  = retail ? STD.shopDepth : STD.aptDepth;
+  const cw     = retail ? STD.corridorRetail : STD.corridor;
+  const tA     = retail ? TYPES.shopL : TYPES.apt2;
+  const tB     = retail ? TYPES.shopS : TYPES.apt1;
+  const mix    = opts.mix    != null ? opts.mix    : 0.45;
+  const nLifts = opts.lifts  != null ? opts.lifts  : 2;
+  const nStair = opts.stairs != null ? opts.stairs : 2;
+  const A = plate.w * plate.d;
+
+  let best = null;
+  for (const typ of ['courtyard', 'bar', 'single']){
+    const sk = unitSkeleton(typ, plate, depth, cw);
+    if (!sk) continue;
+    const plan = fillSkeleton(sk, plate, tA, tB, mix, nLifts, nStair);
+    const units = plan.rooms.filter(u => !u.isCore);
+    if (!units.length) continue;
+
+    const corr  = plan.corridor.reduce((a,c)=>a + c.w*c.d, 0) / A;
+    const courtA= plan.court ? plan.court.w*plan.court.d / A : 0;
+    const filled= (plan.rooms.reduce((a,u)=>a+u.area,0) / A) + corr + courtA;
+    const areaErr = units.reduce((a,u)=>a + Math.abs(u.area-u.target)/u.target, 0) / units.length;
+
+    // leaving floor unbuilt is the worst outcome, then runaway circulation
+    const score = (1 - Math.min(1, filled)) * 6
+                + Math.max(0, corr - 0.18) * 8
+                + areaErr
+                + courtA * 0.35;             // a void is useful, but it is not lettable
+    plan.typology = typ;
+    plan.metrics = { corr, filled, areaErr, courtA, score };
+    if (!best || score < best.metrics.score) best = plan;
+  }
+  return best || { rooms:[], corridor:[], court:null, core:[], typology:'none', plate };
+}
+
+/* Every unit must share a real edge with a corridor, not merely a corner. */
+function checkAccess(plan){
+  const near = v => Math.abs(v) < 0.05;
+  const touch = (u, c) => {
+    const ox = Math.min(u.x+u.w, c.x+c.w) - Math.max(u.x, c.x);
+    const oy = Math.min(u.y+u.d, c.y+c.d) - Math.max(u.y, c.y);
+    if (ox > 0.5 && (near(u.y - (c.y+c.d)) || near(c.y - (u.y+u.d)))) return true;
+    if (oy > 0.5 && (near(u.x - (c.x+c.w)) || near(c.x - (u.x+u.w)))) return true;
+    return false;
+  };
+  const bad = plan.rooms.filter(u => !plan.corridor.some(c => touch(u, c)));
+  return { ok: bad.length === 0, bad };
+}
+
+/* No two rooms may share floor area. */
+function checkOverlap(plan){
+  const all = plan.rooms.concat(plan.corridor);
+  const bad = [];
+  for (let i = 0; i < all.length; i++)
+    for (let j = i+1; j < all.length; j++)
+      if (overlaps(all[i], all[j])) bad.push([i, j]);
+  return { ok: bad.length === 0, bad };
+}
+
+/* Title block for a unit plan: level, use, typology and a north arrow. */
+function planFooter(g, lvl, size){
+  const plan = state.plan[lvl], vg = state.vg, pg = state.pg;
+  g.save();
+  g.textAlign='left'; g.textBaseline='alphabetic';
+  g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+  g.fillText(`Level ${lvl+1}`, 14, size-20);
+  g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+  const useName = USE_LABEL[pg.floorUse[lvl]] || pg.floorUse[lvl];
+  const units = plan.rooms.filter(r=>!r.isCore && r.target).length;
+  g.fillText(`${useName} \u00b7 ${plan.typology} \u00b7 ${units} units \u00b7 `
+    + `${Math.round(plan.circ/plan.gross*100)}% circulation`, 14, size-9);
+  const nx = size-24, ny = 26;
+  g.translate(nx,ny); g.rotate(-(vg.angle||0));
+  g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(0,11); g.lineTo(0,-11);
+  g.moveTo(-4,-4); g.lineTo(0,-11); g.lineTo(4,-4); g.stroke();
+  g.restore();
+}
+
+/* ---------------------------------------------------------------------------
+   Per-storey plate, then a plan for it.
+
+   The structural bay grid still drives the massing, the FAR and the frame; it
+   is only the space planning that has moved off it. A unit is cut by frontage
+   along a corridor now, so a 1 bed lands near 650 sq ft instead of being
+   rounded up to whole 484 sq ft bays.
+--------------------------------------------------------------------------- */
+const RETAIL_USES = new Set(['retail','restaurant']);
+
+function storeyPlate(vg, s){
+  const cells = vg.byStory[s] || [];
+  if (!cells.length) return null;
+  let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+  for (const id of cells){
+    const v = vg.voxels[id];
+    x0=Math.min(x0,v.x); y0=Math.min(y0,v.y);
+    x1=Math.max(x1,v.x+v.w); y1=Math.max(y1,v.y+v.d);
+  }
+  return { x:x0, y:y0, w:x1-x0, d:y1-y0 };
+}
+
+function buildPlans(vg, pg, cfg){
+  const lifts  = Math.max(1, (cfg.core && cfg.core.liftCount)  || 1);
+  const stairs = Math.max(1, (cfg.core && cfg.core.stairCount) || 1);
+  const out = [];
+  for (let s = 0; s < vg.byStory.length; s++){
+    const plate = storeyPlate(vg, s);
+    if (!plate){ out.push(null); continue; }
+    const use  = (pg.floorUse && pg.floorUse[s]) || 'apartment';
+    const kind = RETAIL_USES.has(use) ? 'retail' : 'residential';
+    const plan = planStorey(plate, kind, { lifts, stairs });
+    /* The planner names uses generically; the app has its own keys for colour,
+       labelling and the leasable test. Translate once, here at the boundary,
+       so the planner stays independent of this file. */
+    for (const r of plan.rooms){
+      if (r.isCore) r.use = r.label === 'Lift' ? 'elevator' : 'stairs';
+    }
+    for (const c of plan.corridor) c.use = 'corridor';
+    plan.use = use;
+    plan.gross = plate.w * plate.d;
+    plan.net   = plan.rooms.reduce((a,r)=>a + (r.isCore ? 0 : r.area), 0);
+    plan.circ  = plan.corridor.reduce((a,c)=>a + c.w*c.d, 0);
+    plan.voidA = plan.court ? plan.court.w * plan.court.d : 0;
+    out.push(plan);
+  }
+  return out;
+}
+
+/* Rooms as rectangles: poche walls, a swing on every unit door, glazing on the
+   outer face. Drawn straight from the planner rather than traced round bays. */
+function drawUnitPlan(g, plan, P, k, detail){
+  const WALL = Math.max(1.2, 0.55*k);
+  const fill = (r, a) => {
+    const use = r.use === 'services' ? 'services' : r.use;
+    g.fillStyle = tint(USE_COL[use] || '#c7c7cc', a);
+    const [x,y] = P(r.x, r.y);
+    g.fillRect(x, y, r.w*k + 0.4, r.d*k + 0.4);
+  };
+  if (plan.court){
+    const [x,y] = P(plan.court.x, plan.court.y);
+    g.fillStyle = '#dff0d2';
+    g.fillRect(x, y, plan.court.w*k, plan.court.d*k);
+    if (detail){
+      g.save(); g.fillStyle='#6f8f5a';
+      g.font='500 9px -apple-system,Inter,sans-serif';
+      g.textAlign='center'; g.textBaseline='middle';
+      g.fillText('COURTYARD', x + plan.court.w*k/2, y + plan.court.d*k/2);
+      g.restore();
+    }
+  }
+  for (const c of plan.corridor) fill(c, detail ? 0.34 : 0.62);
+  for (const r of plan.rooms)    fill(r, detail ? 0.30 : 0.62);
+
+  // demising walls
+  g.strokeStyle = '#3a3a3c'; g.lineWidth = WALL; g.lineJoin='miter';
+  for (const r of plan.rooms.concat(plan.corridor)){
+    const [x,y] = P(r.x, r.y);
+    g.strokeRect(x, y, r.w*k, r.d*k);
+  }
+  if (!detail) return;
+
+  g.font = '600 9px -apple-system,Inter,sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  for (const r of plan.rooms){
+    const [x,y] = P(r.x, r.y), w = r.w*k, d = r.d*k;
+    if (Math.min(w,d) < 16) continue;
+    g.fillStyle = '#1d1d1f';
+    g.fillText(r.label, x+w/2, y+d/2 - (r.isCore ? 0 : 5));
+    if (!r.isCore && Math.min(w,d) > 26){
+      g.fillStyle = '#86868b';
+      g.font = '500 8px -apple-system,Inter,sans-serif';
+      g.fillText(fmt(Math.round(r.area)) + ' sq ft', x+w/2, y+d/2 + 6);
+      g.font = '600 9px -apple-system,Inter,sans-serif';
+    }
+  }
+}
+
+
 /* ================= run ================= */
 let busy=false;
 async function generate(animate){
@@ -4368,6 +4917,7 @@ async function generate(animate){
   }
   const pg=buildProgramGraph(vg,cfg);
   state.vg=vg; state.pg=pg;
+  state.plan=buildPlans(vg,pg,cfg);
   const out=[];
   for(let i=0;i<cfg.nOpts;i++){
     $('workingTxt').textContent=`Solving option ${i+1} of ${cfg.nOpts}`;
