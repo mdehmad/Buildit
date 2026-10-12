@@ -61,41 +61,56 @@ training, no GPU — it runs in a few hundred milliseconds in a tab.
    contiguous by construction, so a room can never end up in two disconnected pieces.
 4. **Simulated annealing** over seed positions, scored on adjacency, compactness,
    daylight for leasable space, core stacking and FAR fit.
-5. **Access by construction.** The corridor spine is laid first and every room is
-   rooted on a bay with corridor frontage, so access is a property of the layout
-   rather than something checked afterwards.
+5. **Access by construction.** The corridor is laid first and every unit is cut
+   against it, so access is a property of the layout rather than something
+   checked afterwards.
 
-Verified across a 120-case sweep: 100% unit access, zero fragmented rooms, zero FAR
-breaches, circulation held under 21% of plate area.
+Units themselves are not planned on the bay grid. A 22 ft bay is 484 sq ft, so a
+620 sq ft apartment cannot be built from a whole number of them. Instead the
+planner strikes a corridor through the plate and cuts the leftover depth into
+units **by frontage**, which is continuous — the same thing an architect does
+when tuning unit widths to a structural bay. It picks between three typologies
+by building each one the plate can carry and scoring them against each other:
+
+| typology | when it is used |
+|---|---|
+| **courtyard** | perimeter units, corridor ring, daylit void in the middle |
+| **bar** | double-loaded corridor, units both sides, all with daylight |
+| **single** | one band against a corridor, for a narrow plate |
+
+Verified across an 840-case sweep over plate sizes and both uses: every unit
+reachable from circulation, no overlapping rooms, every floor 100% filled,
+circulation never above 21%. Unit-area error median 2.7%, 90th percentile 11%.
 
 ## Known limitations
 
 Worth reading before trusting the output.
 
-**Unit areas drift from the brief.** This is the significant one. Rooms are assembled
-from whole structural bays, so a 22 ft bay is 484 sq ft and a 620 sq ft apartment
-cannot be expressed exactly. Median unit-area error is around 56%. The layouts are
-contiguous, accessible and code-compliant on setbacks and FAR — but they are massing
-studies and bay-level block plans, not unit plans you can dimension from.
+**The wall-editing tools are inert.** They act on bay edges, which the plans no
+longer use, so the zoomed plan is read-only until they are rebuilt against
+units. Everything else in that view works.
 
-The fix is to model the corridor as a strip running through bays rather than as whole
-bays, which frees the leftover depth for rooms. That is a rebuild of the solver core,
-not a patch. Four lighter attempts (planning-grid subdivision, gradient rebalancing,
-claim-back growth, and a comb/teeth double-loaded-corridor layout) were tried and
-reverted — the best of them improved unit areas but fragmented 31 of 120 plates.
+**Unit areas still drift a little.** Median error is 2.7% and the 90th
+percentile 11%, but a short leftover run beside the core can produce an
+oddly-sized unit — the worst in the sweep was 36% out. The planner fills the
+floor rather than leaving a hole, which is the right trade but does occasionally
+make a unit it would not have chosen.
 
-**Small pockets are dropped.** About 0.71% of floor area ends up in pockets that
-can't be reached without passing through a corridor or lift shaft, and is discarded.
+**A courtyard costs floor area.** On a deep plate the light well is a void, so
+the building will not reach its full FAR allowance. That is a real consequence
+of the typology, not a bug, but it means the achieved FAR can sit below the
+ratio you asked for.
 
-**Facade styles are incomplete.** Modern, neoclassical, art deco and others are in.
-Zaha Hadid and Norman Foster styles were requested and never built.
+**Facade styles are incomplete.** Modern, neoclassical, art deco and others are
+in. Zaha Hadid and Norman Foster styles were requested and never built.
 
-**No structural engineering.** Columns, beams and slabs are drawn to look right and
-to make the massing read as a building. Sizes are not calculated and carry no
-engineering meaning.
+**No structural engineering.** Columns, beams and slabs are drawn to look right
+and to make the massing read as a building. Sizes are not calculated and carry
+no engineering meaning.
 
-**Bye-laws are setbacks and FAR only.** No fire egress distances, no parking ratios,
-no daylight-angle rules, no height-plane restrictions beyond the flat limit.
+**Bye-laws are setbacks and FAR only.** No fire egress distances, no parking
+ratios, no daylight-angle rules, no height-plane restrictions beyond the flat
+limit.
 
 ## Project status
 
