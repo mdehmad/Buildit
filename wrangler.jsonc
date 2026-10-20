@@ -1,0 +1,16 @@
+{
+  // Cloudflare Workers static-asset config.
+  //
+  // The app is one self-contained index.html, so there is no Worker script and
+  // no build step: Cloudflare just serves this directory. `name` has to match
+  // the Worker's name in the dashboard exactly, or the build fails.
+  //
+  // Only read when the project is deployed through Workers. Deploying through
+  // Cloudflare Pages instead ignores this file.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "buildit",
+  "compatibility_date": "2026-10-20",
+  "assets": {
+    "directory": "./"
+  }
+}
