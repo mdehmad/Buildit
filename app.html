@@ -573,6 +573,8 @@ select.fin{text-align:left}
 
 .cfchart{width:100%;height:auto;margin:10px 0 4px;display:block}
 .cfx{font-family:var(--mono);font-size:8.5px;fill:var(--text-3)}
+
+.mhint{font-family:var(--mono);font-size:10.5px;color:var(--text-3);margin-left:14px}
 </style>
 </head>
 <body>
@@ -783,7 +785,9 @@ select.fin{text-align:left}
       <button id="mNext" title="Level above">&#9654;</button>
     </span>
     <span class="mtools" id="mTools"></span>
+    <span class="mhint" id="mHint">Click a wall to select it, drag to move it, Delete to merge.</span>
     <span class="mspacer"></span>
+    <button class="mx" id="mRevert" title="Reset this level" style="width:auto;padding:0 10px;font-size:11px">Reset level</button>
     <span class="mopt" id="mOpt"></span>
     <button class="mghost" id="mReset">Revert level</button>
   </div>
@@ -2284,6 +2288,24 @@ function drawBigPlan(){
   const bigPlan = state.plan && state.plan[lvl];
   if (bigPlan && bigPlan.rooms.length){
     drawUnitPlan(g, bigPlan, P, k, true);
+
+    /* The editable walls, with whichever is hovered or held picked out. */
+    const sel = state.mWall, hot = state.mHot;
+    const same = (a,b) => a && b && a.axis===b.axis && Math.abs(a.pos-b.pos)<0.4
+                       && Math.abs(a.lo-b.lo)<0.4;
+    for (const w of demisingWalls(bigPlan)){
+      const on = same(w, sel), warm = same(w, hot);
+      const [x1,y1] = P(w.axis==='v' ? w.pos : w.lo, w.axis==='v' ? w.lo : w.pos);
+      const [x2,y2] = P(w.axis==='v' ? w.pos : w.hi, w.axis==='v' ? w.hi : w.pos);
+      g.strokeStyle = on ? '#E2521D' : warm ? 'rgba(226,82,29,.55)' : 'rgba(17,17,17,.0)';
+      g.lineWidth = on ? 4 : 3.5; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+      g.lineCap = 'butt';
+      if (on){
+        const mx=(x1+x2)/2, my=(y1+y2)/2;
+        g.fillStyle='#E2521D'; g.beginPath(); g.arc(mx,my,4,0,7); g.fill();
+      }
+    }
     g.save();
     g.textAlign='left'; g.textBaseline='alphabetic';
     g.font='600 12px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
@@ -2590,10 +2612,7 @@ function splitAt(sg){
 }
 
 /* ---------- interaction ---------- */
-const M_TOOLS = [
-  ['sel','Select'], ['split','Draw wall'], ['wall','Wall type'],
-  ['door','Door'], ['win','Window'], ['erase','Revert'],
-];
+const M_TOOLS = [ ['sel','Select & drag'], ['split','Divide a unit'] ];
 function mLocal(e){ const r=$('mPlan').getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
 function mToFt(px,py){ const v=mView; return { x:(px-v.ox)/v.k, y:(py-v.oy)/v.k }; }
 function bayAt(px,py){
@@ -2616,123 +2635,99 @@ function segAt(px,py){
   }
   return best;
 }
+/* ---- editing by pointer ------------------------------------------------- */
+function mSay(t){ const el=$('mHint'); if(el) el.textContent=t; }
+
 function mDown(e){
-  const [px,py]=mLocal(e);
-  const T=state.mTool, E=edits(state.mLvl);
-  const sg=segAt(px,py);
-  if (T==='split'){
-    const in2 = innerSegAt(px,py);
-    if (!in2){ mSay('Hover a dotted line inside a space, then click to cut it there.'); return; }
-    const r = splitAt(in2);
-    if (typeof r === 'string') mSay(r);
-    else { mSay(`Created ${r.created}. Drag the new wall to adjust it.`); markEdited(); }
-    redrawEditor(); syncDownstream(); return;
-  }
-  if (!sg) { state.mSel=null; drawBigPlan(); return; }
-  if (T==='sel'){
-    state.mSel = sg.key;
-    state.mDrag = { key:sg.key, x0:px, y0:py, steps:0 };
-    const ra=state.pg.rooms[sg.a], rb=sg.b!=null?state.pg.rooms[sg.b]:null;
-    mSay(rb ? `${wallOf(state.mLvl,sg)} wall between ${ra.name} and ${rb.name} — drag to move, Delete to remove`
-            : `External ${wallOf(state.mLvl,sg)} wall on ${ra.name}`);
-    drawBigPlan(); return;
-  }
-  if (T==='wall'){
-    const cur=wallOf(state.mLvl,sg);
-    const nxt=WALL_ORDER[(WALL_ORDER.indexOf(cur)+1)%WALL_ORDER.length];
-    E.wall[sg.key]=nxt; mSay(`Wall set to ${nxt==='none'?'open (no wall)':nxt}.`);
-  } else if (T==='door'){
-    if (sg.ext){ mSay('Doors go on internal walls. Use the Window tool on the facade.'); return; }
-    E.door[sg.key] = !(sg.door);
-    mSay(E.door[sg.key]?'Door added.':'Door removed.');
-  } else if (T==='win'){
-    if (!sg.ext){ mSay('Windows go on external walls.'); return; }
-    E.win[sg.key] = !(sg.win);
-    mSay(E.win[sg.key]?'Window added.':'Window removed.');
-  } else if (T==='erase'){
-    delete E.wall[sg.key]; delete E.door[sg.key]; delete E.win[sg.key];
-    mSay('Reverted that wall to the generated default.');
-  }
-  redrawEditor(); syncDownstream();
-}
-// candidate cut lines: edges between two bays of the same space
-function innerSegAt(px,py){
-  const vg=state.vg, A=effAssign(), lvl=state.mLvl;
-  let best=null, bd=12;
-  for (const id of (vg.byStory[lvl]||[])){
-    const a=A[id]; if(a===-1) continue;
-    const v=vg.voxels[id];
-    DIRS.forEach(([dx,dy],k)=>{
-      const j=vg.index.get(`${lvl},${v.ix+dx},${v.iy+dy}`);
-      if (j===undefined || A[j]!==a || j<id) return;
-      let p1,p2;
-      if (k===0){p1=[v.x,v.y];p2=[v.x+v.w,v.y];}
-      else if(k===1){p1=[v.x+v.w,v.y];p2=[v.x+v.w,v.y+v.d];}
-      else if(k===2){p1=[v.x,v.y+v.d];p2=[v.x+v.w,v.y+v.d];}
-      else {p1=[v.x,v.y];p2=[v.x,v.y+v.d];}
-      const [x1,y1]=[mView.ox+p1[0]*mView.k, mView.oy+p1[1]*mView.k];
-      const [x2,y2]=[mView.ox+p2[0]*mView.k, mView.oy+p2[1]*mView.k];
-      const ddx=x2-x1, ddy=y2-y1, L2=ddx*ddx+ddy*ddy;
-      let t=L2?((px-x1)*ddx+(py-y1)*ddy)/L2:0; t=Math.max(0,Math.min(1,t));
-      const d=Math.hypot(px-(x1+t*ddx), py-(y1+t*ddy));
-      if (d<bd){ bd=d; best={ id, k, a, b:a, p1, p2, dir:DIRS[k], key:wkey(id,k) }; }
-    });
-  }
-  return best;
-}
-function deleteSelected(){
-  const sg=(state.mSegs||[]).find(o=>o.key===state.mSel);
-  if (!sg){ mSay('Select a wall first.'); return; }
-  const r=deleteWall(sg);
-  if (typeof r === 'string'){ mSay(r); return; }
-  state.mSel=null; markEdited();
-  mSay(`${r.merged} merged into ${r.into}.`);
-  redrawEditor(); syncDownstream();
-}
-function mMove(e){
-  const [px,py]=mLocal(e);
-  if (state.mDrag){
-    const sg=(state.mSegs||[]).find(o=>o.key===state.mDrag.key);
-    if (!sg) return;
-    const ax=segAxis(sg);
-    const px0 = ax==='h' ? (py-state.mDrag.y0) : (px-state.mDrag.x0);
-    const stepPx = state.cfg.bay * mView.k;
-    const want = Math.trunc(px0/stepPx);
-    while (state.mDrag.steps !== want){
-      const dir = want > state.mDrag.steps ? 1 : -1;
-      const run = wallRun(sg);
-      // positive screen delta moves the wall toward increasing x or y
-      const nearIsA = true;
-      const intoB = (dir>0) === (sg.dir[0]>0 || sg.dir[1]>0);
-      const err = moveWall(run, intoB);
-      if (err){ mSay(err); state.mDrag=null; redrawEditor(); return; }
-      state.mDrag.steps += dir;
-      markEdited();
-      const segs = planState(state.mLvl); state.mSegs = segs;
-      const again = segs.find(o=>o.a===sg.a&&o.b===sg.b&&segAxis(o)===ax);
-      if (!again){ state.mDrag=null; break; }
-      state.mDrag.key = again.key; state.mSel = again.key;
-      sg.dir = again.dir; sg.a = again.a; sg.b = again.b;
-      sg.p1 = again.p1; sg.p2 = again.p2; sg.k = again.k; sg.id = again.id;
-    }
-    redrawEditor(); return;
-  }
-  if (state.mTool==='split'){
-    const in2=innerSegAt(px,py);
-    const key=in2?('cut'+in2.key):null;
-    if (key!==state.mHot){ state.mHot=key; state.mCut=in2; drawBigPlan(); }
+  const plan = state.plan && state.plan[state.mLvl]; if (!plan) return;
+  const [px,py] = mLocal(e);
+  const f = mToFt(px,py);
+  const tol = 7 / (mView.k || 1);
+
+  if (state.mTool === 'split'){
+    const i = roomAtFt(plan, f);
+    if (i < 0){ mSay('Click inside a unit to divide it.'); return; }
+    const at = plan.rooms[i].w >= plan.rooms[i].d ? f.x : f.y;
+    const err = tryEdit(plan, () => splitRoom(plan, i, at, levelKind(state.mLvl)));
+    mSay(err || 'Divided. Drag the new wall to adjust it.');
+    if (!err) afterEdit();
     return;
   }
-  const sg=segAt(px,py);
-  const key=sg?sg.key:null;
-  if (key!==state.mHot){ state.mHot=key; drawBigPlan(); }
+
+  const w = wallNear(plan, f, tol);
+  if (w){
+    state.mWall = w; state.mDrag = true;
+    $('mPlan').setPointerCapture(e.pointerId);
+    mSay('Drag to move the wall. Press Delete to merge the two units.');
+    drawBigPlan();
+    return;
+  }
+  const i = roomAtFt(plan, f);
+  state.mWall = null; state.mRoomSel = i;
+  mSay(i >= 0 ? `${plan.rooms[i].label} \u00b7 ${fmt(Math.round(plan.rooms[i].area))} sq ft`
+              : 'Click a wall to select it, or a unit to see its area.');
+  drawBigPlan();
 }
+
+function mMove(e){
+  const plan = state.plan && state.plan[state.mLvl]; if (!plan) return;
+  const [px,py] = mLocal(e);
+  const f = mToFt(px,py);
+
+  if (state.mDrag && state.mWall){
+    const err = tryEdit(plan, () =>
+      moveWall(plan, state.mWall, state.mWall.axis === 'v' ? f.x : f.y));
+    if (!err){
+      const R = plan.rooms, k = levelKind(state.mLvl);
+      relabel(R[state.mWall.a], k); relabel(R[state.mWall.b], k);
+      state.mWall.pos = state.mWall.axis === 'v' ? R[state.mWall.b].x : R[state.mWall.b].y;
+      mSay(`${R[state.mWall.a].label} ${fmt(Math.round(R[state.mWall.a].area))} \u00b7 `
+         + `${R[state.mWall.b].label} ${fmt(Math.round(R[state.mWall.b].area))} sq ft`);
+      drawBigPlan();
+    } else mSay(err);
+    return;
+  }
+  const tol = 7 / (mView.k || 1);
+  const hot = wallNear(plan, f, tol);
+  const was = state.mHot;
+  state.mHot = hot;
+  $('mPlan').style.cursor = hot ? (hot.axis==='v' ? 'ew-resize' : 'ns-resize')
+                                : (state.mTool==='split' ? 'crosshair' : 'default');
+  if ((!!hot) !== (!!was) || (hot && was && hot.pos !== was.pos)) drawBigPlan();
+}
+
+function mUp(e){
+  if (!state.mDrag) return;
+  state.mDrag = false;
+  try { $('mPlan').releasePointerCapture(e.pointerId); } catch(_){}
+  afterEdit();
+}
+
+function deleteSelected(){
+  const plan = state.plan && state.plan[state.mLvl];
+  if (!plan || !state.mWall){ mSay('Select a wall first, then press Delete.'); return; }
+  const err = tryEdit(plan, () => mergeWall(plan, state.mWall));
+  if (err){ mSay(err); return; }
+  relabel(plan.rooms[Math.min(state.mWall.a, plan.rooms.length-1)], levelKind(state.mLvl));
+  state.mWall = null;
+  mSay('Merged.');
+  afterEdit();
+}
+
+/* Revert this level to what the planner produced. */
+function revertLevel(){
+  const fresh = buildPlans(state.vg, state.pg, state.cfg);
+  if (fresh && fresh[state.mLvl]) state.plan[state.mLvl] = fresh[state.mLvl];
+  state.mWall = null; state.mHot = null;
+  mSay('Level reset to the generated layout.');
+  afterEdit();
+}
+
 function syncDownstream(){
   paintHead(); paintSheet(); paint3D();
   if (state.view==='render') buildRender();
   paintRibbon();
 }
-const mSay = t => { $('mHint').textContent = t; };
 function markEdited(){ state.mEdited=true; }
 
 function redrawEditor(){ drawBigPlan(); paintRoomList(); }
@@ -6537,6 +6532,158 @@ function cashflow(){
            profit: series[series.length-1].bal };
 }
 
+/* ============================================================================
+   Editing a plan.
+
+   Units are rectangles cut along a corridor, so the thing between two of them
+   is a shared edge and nothing more. Dragging it moves frontage from one unit
+   to its neighbour; deleting it merges them; clicking inside a unit cuts it in
+   two. That is the whole edit model, and it is a far better fit than the bay
+   machinery this replaces, which could only ever move a wall a whole bay at a
+   time and stopped working altogether once units were cut by frontage.
+
+   Edits are applied straight to state.plan, so the schedule, the appraisal and
+   the 3D model follow without any plumbing of their own, and regenerating
+   clears them the way it always has.
+   ========================================================================== */
+const MIN_FRONT = 11;          // the narrowest a room can usefully be
+
+/* Every wall shared by two rooms on a level. */
+function demisingWalls(plan){
+  const R = plan.rooms, out = [];
+  const near = (a,b) => Math.abs(a-b) < 0.4;
+  for (let i = 0; i < R.length; i++)
+    for (let j = 0; j < R.length; j++){
+      if (i === j) continue;
+      const a = R[i], b = R[j];
+      // b immediately right of a, sharing vertical extent
+      if (near(a.x + a.w, b.x) && near(a.y, b.y) && near(a.d, b.d))
+        out.push({ axis:'v', pos:b.x, lo:a.y, hi:a.y + a.d, a:i, b:j });
+      // b immediately below a, sharing horizontal extent
+      if (near(a.y + a.d, b.y) && near(a.x, b.x) && near(a.w, b.w))
+        out.push({ axis:'h', pos:b.y, lo:a.x, hi:a.x + a.w, a:i, b:j });
+    }
+  return out;
+}
+
+/* Rename a room to whatever its area now makes it. A dragged wall changes the
+   areas either side, and a 2 bed that has shrunk to 640 sq ft is a 1 bed. */
+function relabel(room, kind){
+  if (room.isCore || room.isLobby || room.use === 'corridor') return;
+  const set = kind === 'retail' ? [TYPES.shopS, TYPES.shopL] : [TYPES.apt1, TYPES.apt2];
+  let best = set[0], bd = Infinity;
+  for (const t of set){
+    const d = Math.abs(room.area - t.target);
+    if (d < bd){ bd = d; best = t; }
+  }
+  room.use = best.use; room.label = best.label;
+  room.typeKey = best.key; room.target = best.target;
+}
+const levelKind = lvl => {
+  const u = (state.pg && state.pg.floorUse[lvl]) || 'apartment';
+  return RETAIL_USES.has(u) ? 'retail' : 'residential';
+};
+
+/* Move a wall. Returns a reason when it cannot go where it was asked. */
+function moveWall(plan, wall, to){
+  const A = plan.rooms[wall.a], B = plan.rooms[wall.b];
+  if (wall.axis === 'v'){
+    const lo = A.x + MIN_FRONT, hi = B.x + B.w - MIN_FRONT;
+    if (hi < lo) return 'Neither unit can give up any more frontage';
+    const x = Math.max(lo, Math.min(hi, to));
+    A.w = x - A.x; B.w = (B.x + B.w) - x; B.x = x;
+  } else {
+    const lo = A.y + MIN_FRONT, hi = B.y + B.d - MIN_FRONT;
+    if (hi < lo) return 'Neither unit can give up any more frontage';
+    const y = Math.max(lo, Math.min(hi, to));
+    A.d = y - A.y; B.d = (B.y + B.d) - y; B.y = y;
+  }
+  A.area = A.w * A.d; B.area = B.w * B.d;
+  return null;
+}
+
+function mergeWall(plan, wall){
+  const R = plan.rooms, A = R[wall.a], B = R[wall.b];
+  if (A.isCore || B.isCore) return 'A lift or stair cannot be merged away';
+  const x = Math.min(A.x, B.x), y = Math.min(A.y, B.y);
+  const w = Math.max(A.x + A.w, B.x + B.w) - x;
+  const d = Math.max(A.y + A.d, B.y + B.d) - y;
+  const keep = A.isLobby ? A : B.isLobby ? B : A;
+  const drop = keep === A ? B : A;
+  keep.x = x; keep.y = y; keep.w = w; keep.d = d; keep.area = w * d;
+  R.splice(R.indexOf(drop), 1);
+  return null;
+}
+
+function splitRoom(plan, idx, at, kind){
+  const r = plan.rooms[idx];
+  if (r.isCore) return 'A lift or stair cannot be subdivided';
+  /* Cut across the frontage, never across the depth. A unit reaches the
+     corridor along one edge; dividing it parallel to that edge would leave the
+     back half with no way out. Splitting across the longer side did exactly
+     that on a deep plate. */
+  const near = (a,b) => Math.abs(a-b) < 0.4;
+  let horiz = r.w >= r.d;
+  for (const c of plan.corridor){
+    if (near(r.y + r.d, c.y) || near(c.y + c.d, r.y)){ horiz = true;  break; }
+    if (near(r.x + r.w, c.x) || near(c.x + c.w, r.x)){ horiz = false; break; }
+  }
+  const span = horiz ? r.w : r.d;
+  if (span < MIN_FRONT * 2) return 'Not enough width to divide this one';
+  const origin = horiz ? r.x : r.y;
+  const t = Math.max(MIN_FRONT, Math.min(span - MIN_FRONT, at - origin));
+  const second = { ...r };
+  if (horiz){ second.x = r.x + t; second.w = r.w - t; r.w = t; }
+  else      { second.y = r.y + t; second.d = r.d - t; r.d = t; }
+  r.area = r.w * r.d; second.area = second.w * second.d;
+  delete second.isLobby;
+  plan.rooms.splice(idx + 1, 0, second);
+  relabel(r, kind); relabel(second, kind);
+  return null;
+}
+
+function roomAtFt(plan, p){
+  for (let i = 0; i < plan.rooms.length; i++){
+    const r = plan.rooms[i];
+    if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.d) return i;
+  }
+  return -1;
+}
+function wallNear(plan, p, tol){
+  const ws = demisingWalls(plan);
+  let best = null, bd = tol;
+  for (const w of ws){
+    const along = w.axis === 'v' ? p.y : p.x;
+    if (along < w.lo - 1 || along > w.hi + 1) continue;
+    const d = Math.abs((w.axis === 'v' ? p.x : p.y) - w.pos);
+    if (d < bd){ bd = d; best = w; }
+  }
+  return best;
+}
+
+/* Run an edit, and put it back if it breaks the plan. An edit that leaves a
+   room unreachable or two rooms overlapping is not an edit worth having, and
+   silently accepting one would undo the guarantee the planner works to. */
+function tryEdit(plan, fn){
+  const before = JSON.stringify(plan.rooms);
+  const err = fn();
+  if (err){ plan.rooms = JSON.parse(before); return err; }
+  if (!checkAccess(plan).ok || !checkOverlap(plan).ok){
+    plan.rooms = JSON.parse(before);
+    return 'That would leave a space with no way out';
+  }
+  return null;
+}
+
+/* Everything downstream reads state.plan, so one refresh does the lot. */
+function afterEdit(){
+  state.mEdited = true;
+  paintInfo(); paintSheet(); drawBigPlan(); paintRoomList();
+  if (state.view === 'plans') paintPlans();
+  invalidate3DOnly();
+}
+function invalidate3DOnly(){ try { paint3D(); } catch(_){} }
+
 /* ================= run ================= */
 let busy=false;
 async function generate(animate){
@@ -6774,6 +6921,9 @@ $('mReset').onclick=()=>{ state.edits[state.mLvl]={bays:{},wall:{},door:{},win:{
   dirtyEdits(); redrawEditor(); mSay('Level reverted to the generated plan.'); };
 $('mPlan').addEventListener('pointerdown',mDown);
 $('mPlan').addEventListener('pointermove',mMove);
+$('mPlan').addEventListener('pointerup',mUp);
+$('mRevert').onclick = revertLevel;
+$('mPlan').addEventListener('pointercancel',mUp);
 window.addEventListener('pointerup',()=>{
   if (state.mDrag){ state.mDrag=null; syncDownstream(); }
   state.mPaint=false;
