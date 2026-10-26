@@ -559,6 +559,17 @@ select.fin{text-align:left}
   line-height:1.5;margin-top:2px}
 @media (max-width:1240px){.body.with-info{grid-template-columns:1fr}
   .body.with-info .info{display:none}}
+
+.chk{display:flex;align-items:center;gap:7px;margin-top:9px;cursor:pointer;font-size:12px}
+.chk input{width:14px;height:14px;accent-color:var(--mark);cursor:pointer}
+.demand{margin-top:9px;padding:9px 11px;border-radius:var(--r);font-size:11.5px;line-height:1.5}
+.demand.ok{background:rgba(63,107,74,.08);color:#2F5638}
+.demand.short{background:rgba(226,82,29,.09);color:var(--mark)}
+.demand b{display:block;font-weight:600;margin-bottom:2px}
+.demand button{margin-top:7px;padding:4px 10px;font:inherit;font-size:11px;
+  border:1px solid currentColor;background:transparent;color:inherit;
+  border-radius:var(--r-sm);cursor:pointer}
+.demand button:hover{background:rgba(0,0,0,.05)}
 </style>
 </head>
 <body>
@@ -675,7 +686,10 @@ select.fin{text-align:left}
               <div><label>Stairs</label><input class="fld" type="number" min="1" max="6" id="cStairN" value="2"></div>
               <div><label>ft&sup2; each</label><input class="fld" type="number" id="cStairs" value="300"></div>
             </div>
+            <label class="chk"><input type="checkbox" id="cSprink" checked>
+              <span>Sprinklered throughout</span></label>
             <p class="tiny" id="coreNote" style="margin:7px 0 0"></p>
+            <div id="coreDemand"></div>
           </div>
           <div class="unit" style="margin-bottom:0"><div class="g">
             <div><label>Restrooms ft&sup2;</label><input class="fld" type="number" id="cWc" value="300"></div>
@@ -2841,7 +2855,7 @@ const state = {
   mSegs:[], mAreas:{}, mEdited:false,
   drawing:false, draft:[], drag:null, hotEdge:-1, vw:null, cursor:null, uid:9,
   plan:null, feas:null, projectId:null, projectName:'Untitled scheme',
-  vgStale:true, fitPending:true,
+  vgStale:true, fitPending:true, sprinklered:true,
 };
 
 /* ================= config ================= */
@@ -4748,7 +4762,7 @@ function paintRibbon(){
     state.pick=+b.dataset.i; state.reveal=1; dirtyEdits(); refreshAll();
   });
   $('ribbon').style.display = state.options.length ? '' : 'none';
-  paintInfo();
+  paintInfo(); paintCoreDemand();
 }
 
 /* The right-hand panel: whether the scheme complies, what it adds up to, what
@@ -4808,6 +4822,16 @@ function paintInfo(){
       <button class="hbtn sm" id="infoFeas">Open feasibility</button>
       <p class="tiny" style="margin-top:8px">Rates are indicative placeholders.</p>
     </div>`:''}
+
+    ${(()=>{ const eg = egressReport(), oc = occupancy();
+       if (!eg || !oc) return '';
+       const bad = !eg.ok || oc.stairShort || oc.liftShort;
+       return `<div class="ibox ${bad?'bad':'ok'}" style="margin-top:18px">
+         <b>${bad ? 'Life safety needs attention' : 'Means of escape checks out'}</b>
+         <span>travel ${Math.round(eg.worstTravel)} / ${eg.per[0].lim.travel} ft ·
+           dead end ${Math.round(eg.worstDeadEnd)} / ${eg.per[0].lim.deadEnd} ft ·
+           ${oc.total} occupants · ${oc.haveStairs}/${oc.stairsNeeded} stairs ·
+           ${oc.haveLifts}/${oc.liftsNeeded} lifts</span></div>`; })()}
 
     <p class="lbl" style="margin:18px 0 7px">Notes on this option</p>
     ${notes.map(([t,d])=>`<div class="inote"><b>${t}</b><span>${d}</span></div>`).join('')}`;
@@ -5090,30 +5114,76 @@ function unitSkeleton(typ, plate, depth, cw){
 /* Fill one skeleton: reserve the core, then cut every run into units. */
 function fillSkeleton(sk, plate, tA, tB, mix, nLifts, nStair){
   const { runs, corridor, court } = sk;
-  const rooms = (sk.back || []).slice(), core = [];
+  const rooms = (sk.back || []).slice();
 
-  /* Reserve the core BEFORE cutting. Carving it out afterwards either overlaps
-     a unit or leaves a hole; reserving keeps the floor filling exactly. Always
-     the longest run at the same fraction along it, so the shaft stacks. */
-  const coreLen = nLifts * STD.liftW + nStair * STD.stairW;
+  /* Core placement.
+
+     Lifts belong together -- one lobby, one waiting point. Stairs must not:
+     IBC 1007.1.1 wants the two exits at least a third of the plate's diagonal
+     apart so a single fire cannot take both. Putting the whole core in one
+     block, which is what this did, left the stairs about 11 ft apart on a
+     typical plate against the 42 ft required. They are now pushed towards
+     opposite ends of the longest run. */
   const host = runs.slice().sort((a,b)=>b.len-a.len)[0];
+  const core = [];
   const reserved = new Map(runs.map(r => [r.tag, []]));
-  if (host && coreLen > 0 && host.len >= coreLen + 2*tB.minFront){
-    const t0 = Math.round(((host.len - coreLen) / 2) * 100) / 100;
-    reserved.set(host.tag, [[t0, coreLen]]);
-    const horiz = host.axis === 'x';
-    let t = t0;
-    const push = (label, wide) => {
-      const cwid = horiz ? wide : host.depth, cdep = horiz ? host.depth : wide;
-      core.push({
-        x: horiz ? host.x + t : (host.flip ? host.x - host.depth : host.x),
-        y: horiz ? (host.flip ? host.y - host.depth : host.y) : host.y + t,
-        w: cwid, d: cdep, area: cwid * cdep, use:'services', label, isCore:true,
-      });
-      t += wide;
-    };
-    for (let i = 0; i < nLifts; i++) push('Lift',  STD.liftW);
-    for (let i = 0; i < nStair; i++) push('Stair', STD.stairW);
+  const liftLen  = nLifts * STD.liftW;
+  const stairLen = nStair * STD.stairW;
+
+  const emit = (run, t, label, wide) => {
+    const horiz = run.axis === 'x';
+    const w = horiz ? wide : run.depth, d = horiz ? run.depth : wide;
+    core.push({
+      x: horiz ? run.x + t : (run.flip ? run.x - run.depth : run.x),
+      y: horiz ? (run.flip ? run.y - run.depth : run.y) : run.y + t,
+      w, d, area: w * d, use:'services', label, isCore:true,
+    });
+  };
+
+  if (host && (liftLen + stairLen) > 0){
+    const L = host.len;
+    const spread = L >= liftLen + stairLen + 2 * tB.minFront;
+    if (spread){
+      /* Stairs go to the ends of the run and the lifts sit between them. An
+         earlier attempt kept them inboard and demanded four units' width of
+         clearance, which no ordinary plate could give, so it always fell back
+         to the single block and the stairs stayed 11 ft apart. At the ends of
+         a slab they are as remote as the geometry allows, which is also where
+         a slab block actually puts them. */
+      const per = stairLen / Math.max(1, nStair);
+      const slots = [];
+      for (let i = 0; i < nStair; i++){
+        const frac = nStair === 1 ? 0 : (i / (nStair - 1));
+        slots.push({ t: frac * (L - per), len: per, label: 'Stair' });
+      }
+      if (liftLen > 0) slots.push({ t:(L - liftLen)/2, len:liftLen, label:'Lift' });
+      slots.sort((p,q)=>p.t-q.t);
+      // push apart anything that ended up overlapping
+      for (let i = 1; i < slots.length; i++){
+        const prev = slots[i-1];
+        if (slots[i].t < prev.t + prev.len + tB.minFront)
+          slots[i].t = prev.t + prev.len + tB.minFront;
+      }
+      if (slots[slots.length-1].t + slots[slots.length-1].len <= L){
+        const res = [];
+        for (const sl of slots){
+          res.push([Math.round(sl.t*100)/100, sl.len]);
+          const n = sl.label === 'Lift' ? nLifts : 1;
+          const unit = sl.label === 'Lift' ? STD.liftW : sl.len;
+          let t = sl.t;
+          for (let k = 0; k < n; k++){ emit(host, t, sl.label, unit); t += unit; }
+        }
+        reserved.set(host.tag, res);
+      }
+    }
+    if (!core.length && host.len >= liftLen + stairLen + 2 * tB.minFront){
+      // plate too short to separate them: fall back to a single block
+      const t0 = Math.round(((host.len - liftLen - stairLen) / 2) * 100) / 100;
+      reserved.set(host.tag, [[t0, liftLen + stairLen]]);
+      let t = t0;
+      for (let i = 0; i < nLifts; i++){ emit(host, t, 'Lift',  STD.liftW);  t += STD.liftW; }
+      for (let i = 0; i < nStair; i++){ emit(host, t, 'Stair', STD.stairW); t += STD.stairW; }
+    }
   }
 
   for (const run of runs){
@@ -5865,6 +5935,233 @@ function paintDash(){
   });
 }
 
+/* ============================================================================
+   Life safety: occupant load, core demand, and means of egress.
+
+   Figures follow the International Building Code, which is what most of the
+   region's bye-laws are modelled on. They are a design check at concept stage,
+   not a code submission: a fire engineer still has to sign the scheme off, and
+   local amendments routinely differ. Every threshold used is named so it can
+   be argued with.
+   ========================================================================== */
+
+/* Gross floor area per occupant, IBC Table 1004.5. */
+const OCC_LOAD = {
+  apartment:200, studio:200, hotel:200,          // residential
+  retail:60, restaurant:15,                      // mercantile / assembly
+  office:150, coworking:150, clinic:100,
+  amenity:50, parking:200, entrance:100,
+  corridor:0, stairs:0, elevator:0, restroom:0, mech:0,
+};
+
+const EGRESS = {
+  // IBC 1017.2 travel distance, 1020.4 dead ends, 1007.1.1 exit remoteness
+  travelSprinklered:250, travelBare:200,
+  deadEndSprinklered:50, deadEndBare:20,
+  remoteSprinklered:1/3, remoteBare:1/2,
+  stairInPerOcc:0.2,        // 1005.3.1 sprinklered; 0.3 without
+  stairInPerOccBare:0.3,
+  minStairWidthIn:44,       // 1011.2
+};
+
+/* How many people a storey holds, and what that demands of the core. */
+function occupancy(){
+  const plans = (state.plan||[]).filter(Boolean);
+  if (!plans.length) return null;
+  const sprinklered = state.sprinklered !== false;
+
+  const perFloor = plans.map(p => {
+    let occ = 0;
+    for (const r of p.rooms){
+      const f = OCC_LOAD[r.use]; if (!f) continue;
+      occ += r.area / f;
+    }
+    return Math.ceil(occ);
+  });
+  const total = perFloor.reduce((a,b)=>a+b, 0);
+  const peak  = Math.max(...perFloor);
+
+  /* Exits per storey, IBC 1006.3.2: two up to 500, three to 1000, then four. */
+  const exitsFor = o => o > 1000 ? 4 : o > 500 ? 3 : 2;
+  const stairsNeeded = Math.max(...perFloor.map(exitsFor));
+
+  /* Stair width is driven by the people above it, which on a stacked building
+     accumulates downward -- the ground-floor flight carries the whole tower. */
+  let acc = 0, widthNeeded = EGRESS.minStairWidthIn;
+  for (let i = perFloor.length - 1; i >= 1; i--){
+    acc += perFloor[i];
+    const per = sprinklered ? EGRESS.stairInPerOcc : EGRESS.stairInPerOccBare;
+    widthNeeded = Math.max(widthNeeded, (acc * per) / stairsNeeded);
+  }
+
+  /* Lifts are practice, not code: one car per 65 dwellings is the usual
+     residential rule, one per 15,000 sq ft of net lettable for commercial.
+     Anything over six storeys needs at least two so the building still works
+     when one is out. */
+  const sch = schedule();
+  const homes = sch ? sch.rows.filter(r=>r.unit && r.use==='apartment')
+                              .reduce((a,r)=>a+r.count,0) : 0;
+  const commercialNet = sch ? sch.rows.filter(r=>r.unit && r.use!=='apartment')
+                                      .reduce((a,r)=>a+r.area,0) : 0;
+  let liftsNeeded = Math.ceil(homes/65) + Math.ceil(commercialNet/15000);
+  liftsNeeded = Math.max(1, liftsNeeded);
+  if (plans.length > 6) liftsNeeded = Math.max(2, liftsNeeded);
+
+  const haveStairs = Math.max(1, (state.cfg && state.cfg.core.stairCount) || 1);
+  const haveLifts  = Math.max(1, (state.cfg && state.cfg.core.liftCount) || 1);
+
+  return { perFloor, total, peak, stairsNeeded, liftsNeeded, widthNeeded,
+           haveStairs, haveLifts, sprinklered, homes,
+           stairShort: haveStairs < stairsNeeded,
+           liftShort:  haveLifts  < liftsNeeded };
+}
+
+/* ---------------------------------------------------------------------------
+   Egress geometry.
+
+   The corridor rectangles are sampled along their centrelines into a graph,
+   which joins itself at the corners of a ring. Each unit attaches at the
+   middle of its corridor frontage; travel is then the walk inside the unit to
+   its door plus the shortest path along the corridor to a stair.
+--------------------------------------------------------------------------- */
+function corridorGraph(plan){
+  const STEP = 2;
+  const nodes = [];
+  for (const c of plan.corridor){
+    const horiz = c.w >= c.d;
+    const len = horiz ? c.w : c.d;
+    const cx = c.x + c.w/2, cy = c.y + c.d/2;
+    const n = Math.max(1, Math.round(len / STEP));
+    for (let i = 0; i <= n; i++){
+      const t = (i/n) * len;
+      nodes.push(horiz ? { x:c.x + t, y:cy } : { x:cx, y:c.y + t });
+    }
+  }
+  // join samples that are adjacent, including across rectangles at a corner
+  const adj = nodes.map(()=>[]);
+  const JOIN = STEP * 1.6;
+  for (let i = 0; i < nodes.length; i++)
+    for (let j = i+1; j < nodes.length; j++){
+      const d = Math.hypot(nodes[i].x-nodes[j].x, nodes[i].y-nodes[j].y);
+      if (d <= JOIN){ adj[i].push([j,d]); adj[j].push([i,d]); }
+    }
+  return { nodes, adj };
+}
+
+function nearestNode(g, p){
+  let best = -1, bd = Infinity;
+  for (let i = 0; i < g.nodes.length; i++){
+    const d = Math.hypot(g.nodes[i].x-p.x, g.nodes[i].y-p.y);
+    if (d < bd){ bd = d; best = i; }
+  }
+  return { i:best, d:bd };
+}
+
+function dijkstra(g, sources){
+  const dist = new Array(g.nodes.length).fill(Infinity);
+  const seen = new Array(g.nodes.length).fill(false);
+  for (const s of sources) if (s >= 0) dist[s] = 0;
+  for (;;){
+    let u = -1, bd = Infinity;
+    for (let i = 0; i < dist.length; i++) if (!seen[i] && dist[i] < bd){ bd = dist[i]; u = i; }
+    if (u < 0) break;
+    seen[u] = true;
+    for (const [v,w] of g.adj[u]) if (dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+  }
+  return dist;
+}
+
+function egressCheck(plan){
+  const sprinklered = state.sprinklered !== false;
+  const lim = {
+    travel:  sprinklered ? EGRESS.travelSprinklered  : EGRESS.travelBare,
+    deadEnd: sprinklered ? EGRESS.deadEndSprinklered : EGRESS.deadEndBare,
+    remote:  sprinklered ? EGRESS.remoteSprinklered  : EGRESS.remoteBare,
+  };
+  const stairs = plan.rooms.filter(r => r.isCore && r.label === 'Stair');
+  const g = corridorGraph(plan);
+  if (!g.nodes.length || !stairs.length)
+    return { ok:false, reason:'No corridor or no stair on this floor', lim };
+
+  const srcs = stairs.map(st => nearestNode(g, { x:st.x+st.w/2, y:st.y+st.d/2 }).i);
+  const dist = dijkstra(g, srcs);
+
+  let maxTravel = 0, worst = null;
+  for (const r of plan.rooms){
+    if (r.isCore) continue;
+    const door = nearestNode(g, { x:r.x+r.w/2, y:r.y+r.d/2 });
+    const corridorWalk = dist[door.i];
+    if (!isFinite(corridorWalk)) continue;
+    // the walk inside the unit, from its most remote corner to its door
+    const inside = Math.min(r.w, r.d) + Math.max(r.w, r.d)/2;
+    const t = inside + corridorWalk;
+    if (t > maxTravel){ maxTravel = t; worst = r.label; }
+  }
+
+  /* A dead end is corridor that carries on past the last stair: a terminal
+     sample of the graph, measured back to the nearest stair. A ring has none,
+     because every point can be left in two directions. */
+  let deadEnd = 0;
+  for (let i = 0; i < g.nodes.length; i++){
+    if (g.adj[i].length > 1) continue;              // not a terminal
+    if (isFinite(dist[i])) deadEnd = Math.max(deadEnd, dist[i]);
+  }
+
+  /* Exit remoteness: the two stairs must be at least a fraction of the plate's
+     diagonal apart, so one fire cannot take both. */
+  const diag = Math.hypot(plan.plate.w, plan.plate.d);
+  let sep = 0;
+  for (let i = 0; i < stairs.length; i++)
+    for (let j = i+1; j < stairs.length; j++)
+      sep = Math.max(sep, Math.hypot(
+        (stairs[i].x+stairs[i].w/2)-(stairs[j].x+stairs[j].w/2),
+        (stairs[i].y+stairs[i].d/2)-(stairs[j].y+stairs[j].d/2)));
+  const sepNeeded = diag * lim.remote;
+
+  const fails = [];
+  if (maxTravel > lim.travel) fails.push(`travel ${Math.round(maxTravel)} ft over ${lim.travel} ft`);
+  if (deadEnd > lim.deadEnd)  fails.push(`dead end ${Math.round(deadEnd)} ft over ${lim.deadEnd} ft`);
+  if (stairs.length < 2)      fails.push('only one stair');
+  else if (sep < sepNeeded)   fails.push(`stairs ${Math.round(sep)} ft apart, need ${Math.round(sepNeeded)} ft`);
+
+  return { ok: !fails.length, fails, maxTravel, worst, deadEnd, sep, sepNeeded,
+           stairs: stairs.length, lim, sprinklered };
+}
+
+/* Every storey at once. */
+function egressReport(){
+  const plans = (state.plan||[]).filter(Boolean);
+  if (!plans.length) return null;
+  const per = plans.map((p,i)=>({ lvl:i+1, ...egressCheck(p) }));
+  const bad = per.filter(x=>!x.ok);
+  return { per, bad, ok: !bad.length,
+           worstTravel: Math.max(...per.map(x=>x.maxTravel||0)),
+           worstDeadEnd: Math.max(...per.map(x=>x.deadEnd||0)) };
+}
+
+/* What the core demands of the scheme, shown beside the inputs that set it. */
+function paintCoreDemand(){
+  const el = $('coreDemand'); if (!el) return;
+  const o = occupancy();
+  if (!o){ el.innerHTML = ''; return; }
+  const short = o.stairShort || o.liftShort;
+  const bits = [];
+  if (o.stairShort) bits.push(`${o.stairsNeeded} stairs for ${o.peak} people on the busiest floor`);
+  if (o.liftShort)  bits.push(`${o.liftsNeeded} lifts for ${o.homes} homes`);
+  el.innerHTML = `<div class="demand ${short?'short':'ok'}">
+    <b>${short ? 'Core is undersized' : 'Core meets the demand'}</b>
+    ${short ? bits.join(' · ')
+            : `${o.total} people in the building · ${o.stairsNeeded} stairs and
+               ${o.liftsNeeded} lifts required, ${o.haveStairs} and ${o.haveLifts} provided`}
+    · stair width ${Math.round(o.widthNeeded)} in
+    ${short ? '<button id="coreFix">Size it for me</button>' : ''}</div>`;
+  if ($('coreFix')) $('coreFix').onclick = () => {
+    $('cStairN').value = o.stairsNeeded;
+    $('cLiftN').value  = o.liftsNeeded;
+    coreNote(); invalidate(); generate(false);
+  };
+}
+
 /* ================= run ================= */
 let busy=false;
 async function generate(animate){
@@ -6077,6 +6374,8 @@ function openPanel(on){
 }
 $('btnInputs').onclick = () => openPanel(!$('panel').classList.contains('open'));
 $('scrim').onclick = () => openPanel(false);
+$('cSprink').onchange = e => { state.sprinklered = e.target.checked;
+  paintCoreDemand(); paintInfo(); };
 $('btnGen').onclick = () => { openPanel(false); generate(true); };
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('panel').classList.contains('open')) openPanel(false);
