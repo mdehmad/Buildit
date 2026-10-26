@@ -3,35 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Massing</title>
+<title>buildIT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* Drawing-office palette. Paper carries almost every surface; the surveyor's
+   orange is the one signal colour and is kept under about 4% of what you see,
+   so it still means something where it does appear. */
 :root{
-  --bg:#fff; --bg-2:#f5f5f7; --bg-3:#ececf0; --bg-4:#e2e2e8;
-  --text:#1d1d1f; --text-2:#6e6e73; --text-3:#a1a1a6;
-  --sep:rgba(0,0,0,.07); --blue:#0071e3; --blue-soft:rgba(0,113,227,.1);
-  --amber:#c2703a; --green:#28a05a;
-  --r:12px; --r-sm:8px;
-  --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(0,0,0,.07);
-  --corridor:#c8a97e; --stairs:#f0c808; --elevator:#34c759;
-  --restroom:#e0218a; --mech:#8e8e93; --retail:#ff9500;
-  --apartment:#af52de; --office:#007aff; --amenity:#00c7be; --hotel:#ff375f;
+  --ink:#111111; --graphite:#4A4A48; --steel:#8C8C86;
+  --line:#DEDCD5; --paper:#FAFAF8; --mark:#E2521D;
+
+  --bg:#fff; --bg-2:var(--paper); --bg-3:#F2F1ED; --bg-4:var(--line);
+  --text:var(--ink); --text-2:var(--graphite); --text-3:var(--steel);
+  --sep:rgba(17,17,17,.09);
+  --blue:var(--mark); --blue-soft:rgba(226,82,29,.08);
+  --amber:var(--mark); --green:#3F6B4A;
+  --r:4px; --r-sm:3px;
+  --shadow:0 1px 2px rgba(17,17,17,.04),0 8px 24px rgba(17,17,17,.06);
+  --sans:'Space Grotesk',system-ui,-apple-system,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  /* Use colours stay distinguishable but are pulled towards the paper so a
+     plan reads as a drawing rather than a chart. */
+  --corridor:#C9C7BE; --stairs:#C8A26B; --elevator:#7E9C8B;
+  --restroom:#B08098; --mech:#A3A39B; --retail:#D98A3D;
+  --apartment:#8C7FA8; --office:#6E8CA8; --amenity:#6FA39B; --hotel:#B2706B;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Inter',system-ui,sans-serif;
+body{font-family:var(--sans);
   background:var(--bg-2);color:var(--text);font-size:13px;line-height:1.5;
-  letter-spacing:-.01em;-webkit-font-smoothing:antialiased;overflow:hidden}
-.num{font-variant-numeric:tabular-nums}
+  letter-spacing:-.005em;-webkit-font-smoothing:antialiased;overflow:hidden}
+/* Every number is metadata, and metadata is monospace. */
+.num,.sch td,.sch th,input[type=text],input[type=number]{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
 .frame{display:grid;grid-template-rows:auto 1fr;height:100vh}
 .bar{display:flex;align-items:center;gap:18px;padding:0 16px;height:50px;
   background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px);
   -webkit-backdrop-filter:saturate(180%) blur(20px);
   border-bottom:1px solid var(--sep);z-index:6}
-.bar h1{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.bar h1{font-size:15px;font-weight:600;letter-spacing:-.03em;
+  display:flex;align-items:center;gap:7px}
+.bar h1 em{font-style:normal;color:var(--mark)}
+.datum{width:9px;height:7.5px;fill:var(--mark);flex:none}
+
+/* Drawing-office furniture: hairline rules and monospace metadata. */
+.tiny{font-family:var(--mono);font-size:10px;letter-spacing:.01em;
+  color:var(--text-3);text-transform:none}
+.lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-3)}
+.readout span{font-family:var(--mono);font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase}
 .bar .spacer{flex:1}
 .readout{display:flex;gap:20px}
 .readout div{display:flex;flex-direction:column;line-height:1.2}
@@ -193,7 +218,7 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
   background:transparent;color:var(--text-2);border:0;border-radius:7px;cursor:pointer;
   transition:background .16s,color .16s}
 .views button:hover{color:var(--text)}
-.views button.on{background:var(--blue);color:#fff}
+.views button.on{background:var(--ink);color:var(--paper)}
 
 .rail{position:absolute;top:50%;left:14px;transform:translateY(-50%);z-index:4;
   display:flex;flex-direction:column;gap:2px;padding:4px;border-radius:12px;
@@ -245,7 +270,7 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
   background:var(--bg-2);border:1px solid transparent;border-radius:9px;
   color:var(--text);transition:background .14s,border-color .14s}
 .opt:hover{background:var(--bg-3)}
-.opt.on{background:var(--blue-soft);border-color:var(--blue)}
+.opt.on{background:var(--blue-soft);border-color:var(--mark)}
 .opt .r{font-size:9.5px;color:var(--text-3);line-height:1.2}
 .opt.on .r{color:var(--blue)}
 .opt .v{font-size:14px;font-weight:600;letter-spacing:-.02em}
@@ -343,12 +368,70 @@ table.sch .off{color:var(--amber)}
   .stage{height:64vh}.readout{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* feasibility sheet */
+.feas-grid{display:grid;grid-template-columns:minmax(300px,1fr) minmax(360px,1.4fr);
+  gap:34px;align-items:start;margin-top:4px}
+@media (max-width:1100px){.feas-grid{grid-template-columns:1fr}}
+.fin-t td{vertical-align:middle}
+.fin-t td.r{text-align:right;width:116px}
+.fin-t td.u{color:var(--text-3);font-size:10.5px;font-family:var(--mono);padding-left:10px}
+input.fin,select.fin{width:106px;padding:4px 7px;text-align:right;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;
+  font-family:var(--mono);font-size:11.5px;color:var(--text)}
+input.fin:focus,select.fin:focus{outline:none;border-color:var(--mark)}
+select.fin{text-align:left}
+.warn-note{font-family:var(--mono);font-size:10.5px;line-height:1.6;
+  color:var(--graphite);background:rgba(226,82,29,.06);
+  border-left:2px solid var(--mark);padding:9px 12px;margin:0 0 18px}
+.num.warn{color:var(--mark)}
+
+/* dashboard */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:0;margin:18px 0 30px;border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;background:#fff}
+.step{padding:13px 15px;cursor:pointer;border-right:1px solid var(--line);
+  transition:background .14s}
+.step:last-child{border-right:0}
+.step:hover{background:var(--bg-3)}
+.step .n{display:inline-grid;place-items:center;width:17px;height:17px;
+  border-radius:50%;border:1px solid var(--line);font-family:var(--mono);
+  font-size:9.5px;color:var(--text-3);margin-bottom:7px}
+.step.done .n{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.step b{display:block;font-size:12.5px;font-weight:600;letter-spacing:-.02em}
+.step i{display:block;font-style:normal;font-size:10.5px;color:var(--text-3);margin-top:1px}
+.step em{display:block;font-style:normal;font-family:var(--mono);font-size:10px;
+  color:var(--graphite);margin-top:6px;line-height:1.45}
+.projrow{display:flex;gap:8px;margin-bottom:12px}
+.projrow .btn{width:auto;padding:7px 16px;flex:none}
+.projname{font-family:var(--sans);font-size:12.5px;font-weight:500;color:var(--text);
+  background:transparent;border:1px solid transparent;border-radius:var(--r-sm);
+  padding:4px 8px;width:220px;letter-spacing:-.01em}
+.projname:hover{border-color:var(--line)}
+.projname:focus{outline:none;border-color:var(--mark);background:#fff}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:10px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 14px;display:flex;flex-direction:column;gap:3px}
+.pcard.on{border-color:var(--mark);box-shadow:inset 2px 0 0 var(--mark)}
+.pcard b{font-size:13px;font-weight:600;letter-spacing:-.02em}
+.pacts{display:flex;gap:4px;margin-top:9px}
+.pacts button{flex:1;padding:4px 0;font:inherit;font-family:var(--mono);
+  font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
+  background:var(--bg-3);border:0;border-radius:var(--r-sm);color:var(--graphite)}
+.pacts button:hover{background:var(--ink);color:var(--paper)}
+.pacts button.danger:hover{background:var(--mark);color:#fff}
+.empty-note{background:#fff;border:1px dashed var(--line);border-radius:var(--r);
+  padding:18px;color:var(--text-2);font-size:12.5px}
+.sheet h3 i.tiny{font-style:normal;margin-left:7px;font-weight:400}
 </style>
 </head>
 <body>
 <div class="frame">
   <header class="bar">
-    <h1>Massing</h1>
+    <h1 class="mark"><svg class="datum" viewBox="0 0 12 10" aria-hidden="true">
+      <path d="M6 10 L12 0 L0 0 Z"/></svg>build<em>IT</em></h1>
+    <input class="projname" id="projName" value="Untitled scheme"
+           spellcheck="false" aria-label="Scheme name">
     <span class="spacer"></span>
     <div class="readout">
       <div><span>Plot</span><b class="num" id="mSite">&mdash;</b></div>
@@ -365,7 +448,7 @@ table.sch .off{color:var(--amber)}
       <div class="scroll">
         <details class="acc" open><summary>Location</summary><div class="in">
           <input class="fld" id="locName" placeholder="Site address or plot no.">
-          <p class="tiny" style="margin:10px 0 7px">Trace over a site image</p>
+          <p class="lbl" style="margin:10px 0 7px">Trace over a site image</p>
           <input type="file" id="imgFile" accept="image/*" style="display:none">
           <div class="row2">
             <button class="btn quiet sm" id="imgPick">Load image</button>
@@ -399,7 +482,7 @@ table.sch .off{color:var(--amber)}
             <input type="range" id="sBay" min="12" max="34" step="1" value="20"></div>
           <div class="ctl"><label><span>Upper-storey setback</span><b class="num" id="vUp">1 ft</b></label>
             <input type="range" id="sUp" min="0" max="12" step="1" value="1"></div>
-          <p class="tiny" style="margin:12px 0 7px">Massing</p>
+          <p class="lbl" style="margin:12px 0 7px">Form</p>
           <div class="styles" id="massPick"></div>
           <div class="ctl" style="margin-top:12px" id="twistCtl"><label><span>Twist per floor</span><b class="num" id="vTwist">2&deg;</b></label>
             <input type="range" id="sTwist" min="0" max="8" step="1" value="2"></div>
@@ -420,7 +503,7 @@ table.sch .off{color:var(--amber)}
           <div class="ctl"><label><span>Circulation</span><b class="num" id="vCor">18%</b></label>
             <input type="range" id="sCor" min="8" max="20" step="1" value="16"></div>
           <div class="unit" style="margin-bottom:8px">
-            <p class="tiny" style="margin:0 0 7px">Vertical circulation</p>
+            <p class="lbl" style="margin:0 0 7px">Vertical circulation</p>
             <div class="g4">
               <div><label>Lifts</label><input class="fld" type="number" min="1" max="12" id="cLiftN" value="2"></div>
               <div><label>ft&sup2; each</label><input class="fld" type="number" id="cLifts" value="70"></div>
@@ -437,7 +520,7 @@ table.sch .off{color:var(--amber)}
 
         <details class="acc"><summary>Facade <i id="styleNote"></i></summary><div class="in">
           <div class="styles" id="styles"></div>
-          <p class="tiny" style="margin:12px 0 7px">Cladding material</p>
+          <p class="lbl" style="margin:12px 0 7px">Cladding material</p>
           <div class="mats" id="mats"></div>
           <p class="tiny" style="margin-top:10px">Shown in the Render view.</p>
         </div></details>
@@ -468,13 +551,17 @@ table.sch .off{color:var(--amber)}
         <p class="hint">Drag to orbit &middot; scroll to zoom</p></div>
       <div class="pane" id="panePlans"><div class="plans" id="plansGrid"></div></div>
       <div class="pane" id="paneInv"><div class="sheet" id="sheet"></div></div>
+      <div class="pane" id="paneFeas"><div class="sheet" id="feasSheet"></div></div>
+      <div class="pane" id="paneDash"><div class="sheet" id="dashSheet"></div></div>
 
       <div class="views">
+        <button id="vwDash">Dashboard</button>
         <button id="vwSite" class="on">Plot</button>
         <button id="vwMass">Massing</button>
         <button id="vwRender">Render</button>
         <button id="vwPlans">Plans</button>
         <button id="vwInv">Schedule</button>
+        <button id="vwFeas">Feasibility</button>
       </div>
 
       <div class="rail" id="rail">
@@ -2553,10 +2640,10 @@ function mStep(d){
 
 /* ================= palette ================= */
 const USE_COL = {
-  corridor:'#c8a97e', stairs:'#f0c808', elevator:'#34c759', restroom:'#e0218a',
-  mech:'#8e8e93', retail:'#ff9500', apartment:'#af52de', office:'#007aff',
-  amenity:'#00c7be', hotel:'#ff375f', restaurant:'#ff6b35', clinic:'#5ac8fa',
-  coworking:'#5856d6', studio:'#d4a373', parking:'#7f8c8d', entrance:'#7a2e1e',
+  corridor:'#C9C7BE', stairs:'#C8A26B', elevator:'#7E9C8B', restroom:'#B08098',
+  mech:'#A3A39B', retail:'#D98A3D', apartment:'#8C7FA8', office:'#6E8CA8',
+  amenity:'#6FA39B', hotel:'#B2706B', restaurant:'#C07A55', clinic:'#8FA8BC',
+  coworking:'#9A93B8', studio:'#C2A98A', parking:'#9B9B93', entrance:'#E2521D',
 };
 const USE_HEX = {};
 for (const k in USE_COL) USE_HEX[k] = parseInt(USE_COL[k].slice(1),16);
@@ -2595,6 +2682,7 @@ const state = {
   edits:{}, _eff:null, mLvl:0, mTool:'sel', mRoom:null, mHot:null, mPaint:false,
   mSegs:[], mAreas:{}, mEdited:false,
   drawing:false, draft:[], drag:null, hotEdge:-1, vw:null, cursor:null, uid:9,
+  plan:null, feas:null, projectId:null, projectName:'Untitled scheme',
 };
 
 /* ================= config ================= */
@@ -4461,16 +4549,21 @@ function showView(v){
   $('paneMass').classList.toggle('on', three);
   $('panePlans').classList.toggle('on', v==='plans');
   $('paneInv').classList.toggle('on', v==='inv');
-  for(const [id,k] of [['vwSite','site'],['vwMass','mass'],['vwRender','render'],
-    ['vwPlans','plans'],['vwInv','inv']]) $(id).classList.toggle('on',k===v);
+  $('paneFeas').classList.toggle('on', v==='feas');
+  $('paneDash').classList.toggle('on', v==='dash');
+  for(const [id,k] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
+    ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas']])
+    $(id).classList.toggle('on',k===v);
   $('rail').style.display = v==='site' ? '' : 'none';
   $('floors').style.display = v==='mass' ? '' : 'none';
-  $('ribbon').style.display = (v==='site') ? 'none' : '';
+  $('ribbon').style.display = (v==='site'||v==='dash') ? 'none' : '';
   if (gMass){ gMass.visible = v==='mass'; gRender.visible = v==='render'; }
   if(v==='site') paintSite();
   if(three){ resize(); if(v==='render'){ state.floor=-1; buildRender(); } else paint3D(); }
   if(v==='plans') paintPlans();
   if(v==='inv') paintSheet();
+  if(v==='feas') paintFeas();
+  if(v==='dash') paintDash();
 }
 function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggle('on',!!m); }
 function invalidate(){ if(state.options.length) flag('Inputs changed \u2014 generate again'); }
@@ -4900,6 +4993,512 @@ function drawUnitPlan(g, plan, P, k, detail){
 }
 
 
+/* ============================================================================
+   Cost and feasibility.
+
+   Reads the area schedule, so it is always describing the scheme actually on
+   screen. The method is the ordinary residual appraisal a developer runs
+   before committing: build the cost stack, value the saleable area, and see
+   what is left. Two outputs matter more than the profit figure itself --
+   the breakeven sale rate, and the residual land value, which is the most you
+   could pay for the site and still hit your target margin.
+
+   EVERY RATE BELOW IS AN INDICATIVE PLACEHOLDER. They are starting points, not
+   market data, and they are meant to be overwritten with your own figures.
+   ========================================================================== */
+const CUR = {
+  PKR: { sym:'Rs', step:500,  big:1e7, bigName:'crore' },
+  USD: { sym:'$',  step:5,    big:1e6, bigName:'m' },
+};
+
+/* Build cost per sq ft, by what is being built. Fit-out drives most of the
+   spread: retail and office shell-and-core cost less than they finish for. */
+const RATE_BUILD = {        // PKR / sq ft
+  apartment:7500, studio:7200, hotel:11000,
+  retail:9000, restaurant:10500, office:8500, coworking:8500,
+  clinic:11000, amenity:7000, parking:3500,
+  corridor:6000, stairs:6000, elevator:9000, restroom:9500, mech:7000,
+  entrance:9000,
+};
+/* Sale rate per sq ft of saleable area. Keyed by unit label first so a 2 bed
+   and a shop can be priced differently, then by use as a fallback. */
+const RATE_SALE = {         // PKR / sq ft
+  '1 Bed':20000, '2 Bed':19000, 'Small shop':48000, 'Large shop':42000,
+  apartment:19500, studio:20500, retail:45000, restaurant:45000,
+  office:26000, coworking:26000, hotel:30000, clinic:28000,
+};
+
+const feasDefaults = () => ({
+  cur:'PKR', fx:280,
+  build:{ ...RATE_BUILD }, sale:{ ...RATE_SALE },
+  landMode:'persqft',      // 'persqft' of plot, or 'lump'
+  landRate:9000, landLump:0,
+  soft:12,                 // design, approvals, project management, % of build
+  cont:5,                  // contingency, % of build
+  fin:8,                   // finance, % of (build + land)
+  mkt:3,                   // sales and marketing, % of GDV
+  target:20,               // target margin on cost, for the residual land value
+});
+
+/* Convert a PKR figure for display in the chosen currency. The rates are all
+   stored in PKR so switching currency never rewrites the model. */
+function money(v, f){ return f.cur === 'USD' ? v / (f.fx || 280) : v; }
+function fmtMoney(v, f, dp){
+  const c = CUR[f.cur], x = money(v, f);
+  if (Math.abs(x) >= c.big){
+    return c.sym + ' ' + (x / c.big).toFixed(2) + ' ' + c.bigName;
+  }
+  return c.sym + ' ' + x.toLocaleString(undefined,
+    { maximumFractionDigits: dp == null ? 0 : dp });
+}
+
+function feasibility(){
+  const sch = schedule(); if (!sch) return null;
+  const f = state.feas || (state.feas = feasDefaults());
+
+  /* ---- build cost, element by element, off the schedule rows ---------- */
+  const lines = [];
+  let build = 0;
+  for (const r of sch.rows){
+    const rate = f.build[r.use] != null ? f.build[r.use] : 6000;
+    const cost = r.area * rate;
+    build += cost;
+    lines.push({ name:r.name, use:r.use, unit:r.unit, area:r.area, rate, cost });
+  }
+  lines.sort((a,b)=>b.cost-a.cost);
+
+  /* ---- the rest of the cost stack -------------------------------------- */
+  const plot = sch.plot;
+  const land = f.landMode === 'lump' ? (f.landLump||0) : plot * (f.landRate||0);
+  const soft = build * (f.soft/100);
+  const cont = build * (f.cont/100);
+  const fin  = (build + land) * (f.fin/100);
+
+  /* ---- what the scheme is worth ---------------------------------------- */
+  let gdv = 0; const sale = [];
+  for (const r of sch.rows){
+    if (!r.unit) continue;                       // only saleable area is valued
+    const rate = f.sale[r.name] != null ? f.sale[r.name]
+               : (f.sale[r.use] != null ? f.sale[r.use] : 18000);
+    const value = r.area * rate;
+    gdv += value;
+    sale.push({ name:r.name, use:r.use, count:r.count, area:r.area, rate, value });
+  }
+  sale.sort((a,b)=>b.value-a.value);
+  const mkt = gdv * (f.mkt/100);
+
+  const tdc    = build + land + soft + cont + fin + mkt;   // total development cost
+  const profit = gdv - tdc;
+  const onCost = tdc ? profit / tdc : 0;
+  const onGdv  = gdv ? profit / gdv : 0;
+
+  /* Breakeven: the average sale rate across saleable area at which the scheme
+     returns nothing. Marketing is a share of GDV, so it moves with the answer
+     and cannot be inside the cost being solved for -- using the full TDC here
+     put breakeven ~4% too high and quietly reported a loss-making rate as safe.
+         GDV(1-m) = fixed cost   ->   rate = fixed / ((1-m) * net area)        */
+  const netArea = sale.reduce((a,x)=>a+x.area, 0);
+  const fixed   = build + land + soft + cont + fin;
+  const breakeven = netArea ? fixed / ((1 - f.mkt/100) * netArea) : 0;
+
+  /* Residual land value: hold the target margin, and see what is left for the
+     site. This is the number that decides whether a deal is worth bidding on. */
+  const nonLand = build + soft + cont + mkt;
+  const t = f.target/100, fr = f.fin/100;
+  // gdv = (nonLand + land + fin) * (1+t), with fin = (build+land)*fr
+  const resid = ((gdv/(1+t)) - nonLand - build*fr) / (1 + fr);
+
+  return { f, sch, lines, sale, build, land, soft, cont, fin, mkt, tdc,
+           gdv, profit, onCost, onGdv, breakeven, resid, netArea, plot,
+           costPerGfa: sch.gfa ? tdc / sch.gfa : 0 };
+}
+
+/* ---------------------------------------------------------------------------
+   The feasibility sheet. Inputs are editable in place: every rate is a guess
+   until it is your guess, so none of them are locked away in a settings panel.
+--------------------------------------------------------------------------- */
+function feasRow(label, key, group, suffix){
+  const f = state.feas;
+  const v = group ? f[group][key] : f[key];
+  return `<tr><td>${label}</td>
+    <td class="r"><input class="fin num" data-g="${group||''}" data-k="${key}"
+      type="number" step="any" value="${Math.round(v*100)/100}"></td>
+    <td class="u">${suffix||''}</td></tr>`;
+}
+
+function paintFeas(){
+  const r = feasibility();
+  if (!r){ $('feasSheet').innerHTML =
+    '<h2>Feasibility</h2><p class="sub">Generate a scheme first — the appraisal is built from its area schedule.</p>'; return; }
+  const f = r.f, M = v => fmtMoney(v, f);
+  const pf = r.profit >= 0;
+  const rate = v => (f.cur==='USD' ? (v/(f.fx||280)) : v)
+        .toLocaleString(undefined,{maximumFractionDigits:f.cur==='USD'?1:0});
+
+  const costRows = [
+    ['Construction', r.build], ['Land', r.land],
+    ['Design, approvals, management', r.soft], ['Contingency', r.cont],
+    ['Finance', r.fin], ['Sales and marketing', r.mkt],
+  ];
+
+  $('feasSheet').innerHTML = `
+    <h2>Cost and feasibility</h2>
+    <p class="sub">Residual appraisal of the scheme on screen &middot;
+      ${fmt(Math.round(r.sch.gfa))} sq ft gross &middot;
+      ${fmt(Math.round(r.netArea))} sq ft saleable</p>
+
+    <div class="warn-note">Every rate below is an indicative placeholder, not
+      market data. Replace them with your own figures before this leaves your desk.</div>
+
+    <div class="tot">
+      <div><span>Development cost</span><b class="num">${M(r.tdc)}</b></div>
+      <div><span>Gross development value</span><b class="num">${M(r.gdv)}</b></div>
+      <div><span>Profit</span><b class="num ${pf?'':'warn'}">${M(r.profit)}</b></div>
+      <div><span>Margin on cost</span><b class="num ${r.onCost<0.15?'warn':''}">${(r.onCost*100).toFixed(1)}%</b></div>
+      <div><span>Margin on GDV</span><b class="num">${(r.onGdv*100).toFixed(1)}%</b></div>
+      <div><span>Cost per sq ft gross</span><b class="num">${rate(r.costPerGfa)}</b></div>
+      <div><span>Breakeven sale rate</span><b class="num">${rate(r.breakeven)}</b></div>
+      <div><span>Residual land value</span><b class="num">${M(r.resid)}</b></div>
+    </div>
+
+    <div class="feas-grid">
+      <div>
+        <h3>Assumptions</h3>
+        <table class="sch fin-t"><tbody>
+          <tr><td>Currency</td><td class="r">
+            <select class="fin" data-k="cur">
+              <option value="PKR"${f.cur==='PKR'?' selected':''}>PKR</option>
+              <option value="USD"${f.cur==='USD'?' selected':''}>USD</option>
+            </select></td><td class="u"></td></tr>
+          ${feasRow('Exchange rate','fx',null,'PKR / USD')}
+          <tr><td>Land priced as</td><td class="r">
+            <select class="fin" data-k="landMode">
+              <option value="persqft"${f.landMode==='persqft'?' selected':''}>Rate per sq ft</option>
+              <option value="lump"${f.landMode==='lump'?' selected':''}>Lump sum</option>
+            </select></td><td class="u"></td></tr>
+          ${f.landMode==='lump' ? feasRow('Land, lump sum','landLump',null,'PKR')
+                                : feasRow('Land rate','landRate',null,'PKR / sq ft of plot')}
+          ${feasRow('Design, approvals, management','soft',null,'% of build')}
+          ${feasRow('Contingency','cont',null,'% of build')}
+          ${feasRow('Finance','fin',null,'% of build + land')}
+          ${feasRow('Sales and marketing','mkt',null,'% of GDV')}
+          ${feasRow('Target margin on cost','target',null,'% — sets residual land value')}
+        </tbody></table>
+
+        <h3>Build rate by use</h3>
+        <table class="sch fin-t"><tbody>
+          ${[...new Set(r.lines.map(l=>l.use))].map(u=>
+            feasRow(USE_LABEL[u]||u, u, 'build', 'PKR / sq ft')).join('')}
+        </tbody></table>
+
+        <h3>Sale rate by unit</h3>
+        <table class="sch fin-t"><tbody>
+          ${[...new Set(r.sale.map(l=>l.name))].map(n=>
+            feasRow(n, n, 'sale', 'PKR / sq ft')).join('')}
+        </tbody></table>
+      </div>
+
+      <div>
+        <h3>Where the money goes</h3>
+        <table class="sch"><thead><tr><th>Item</th><th>Amount</th><th>Share</th></tr></thead>
+        <tbody>
+          ${costRows.map(([n,v])=>`<tr><td>${n}</td><td>${M(v)}</td>
+            <td>${r.tdc?(v/r.tdc*100).toFixed(1):0}%</td></tr>`).join('')}
+          <tr class="sum"><td>Total development cost</td><td>${M(r.tdc)}</td><td>100%</td></tr>
+        </tbody></table>
+
+        <h3>Build cost by element</h3>
+        <table class="sch"><thead><tr><th>Element</th><th>Area</th><th>Rate</th><th>Cost</th></tr></thead>
+        <tbody>
+          ${r.lines.map(l=>`<tr><td><span class="nm"><i style="background:${USE_COL[l.use]||'#c7c7cc'}"></i>${l.name}</span></td>
+            <td>${fmt(Math.round(l.area))}</td><td>${rate(l.rate)}</td><td>${M(l.cost)}</td></tr>`).join('')}
+          <tr class="sum"><td>Construction</td><td>${fmt(Math.round(r.sch.gfa))}</td>
+            <td>${rate(r.sch.gfa?r.build/r.sch.gfa:0)}</td><td>${M(r.build)}</td></tr>
+        </tbody></table>
+
+        <h3>Revenue</h3>
+        <table class="sch"><thead><tr><th>Unit</th><th>No.</th><th>Area</th><th>Rate</th><th>Value</th></tr></thead>
+        <tbody>
+          ${r.sale.map(l=>`<tr><td><span class="nm"><i style="background:${USE_COL[l.use]||'#c7c7cc'}"></i>${l.name}</span></td>
+            <td>${l.count}</td><td>${fmt(Math.round(l.area))}</td>
+            <td>${rate(l.rate)}</td><td>${M(l.value)}</td></tr>`).join('')}
+          <tr class="sum"><td>Gross development value</td><td></td><td>${fmt(Math.round(r.netArea))}</td>
+            <td>${rate(r.netArea?r.gdv/r.netArea:0)}</td><td>${M(r.gdv)}</td></tr>
+        </tbody></table>
+
+        <p class="tiny" style="margin-top:14px">
+          Residual land value is what the site is worth at a
+          ${f.target}% margin on cost &mdash; the most you could pay and still
+          hit that target. Breakeven is the average sale rate at which the
+          scheme returns nothing.</p>
+      </div>
+    </div>`;
+
+  $('feasSheet').querySelectorAll('.fin').forEach(el=>{
+    const commit = () => {
+      const g = el.dataset.g, k = el.dataset.k;
+      const v = el.tagName === 'SELECT' ? el.value : parseFloat(el.value);
+      if (el.tagName !== 'SELECT' && !isFinite(v)) return;
+      if (g) state.feas[g][k] = v; else state.feas[k] = v;
+      paintFeas();
+    };
+    el.addEventListener('change', commit);
+  });
+}
+
+/* ============================================================================
+   Projects.
+
+   A project is the inputs, never the output: the site, the rules, the program
+   and the appraisal assumptions. Options are re-solved when it opens, so a
+   saved project stays small and never goes stale against a newer solver.
+
+   Storage is best-effort. The published page keeps projects in the browser,
+   but an artifact sandbox may refuse localStorage outright, so every call is
+   guarded and falls back to memory for the session. Losing a project silently
+   would be worse than saying plainly that it was not saved.
+   ========================================================================== */
+const PKEY = 'buildit.projects.v1';
+let memProjects = null, storeWorks = true;
+
+function readStore(){
+  if (memProjects) return memProjects;
+  try {
+    const raw = localStorage.getItem(PKEY);
+    memProjects = raw ? JSON.parse(raw) : [];
+  } catch(_) { storeWorks = false; memProjects = []; }
+  return memProjects;
+}
+function writeStore(list){
+  memProjects = list;
+  try { localStorage.setItem(PKEY, JSON.stringify(list)); }
+  catch(_) { storeWorks = false; }
+  return storeWorks;
+}
+
+const UI_FIELDS = ['sFh','sBay','sUp','sHl','sAng','sTwist','sCor','sIter','sOpts',
+                   'cStairN','cStairs','cLiftN','cLifts','cWc','cSvc'];
+
+function projectSnapshot(){
+  const ui = {};
+  for (const id of UI_FIELDS){ const el = $(id); if (el) ui[id] = el.value; }
+  return {
+    site: JSON.parse(JSON.stringify(state.site)),
+    mix:  JSON.parse(JSON.stringify(state.mix)),
+    stack: state.stack.slice(),
+    entrances: (state.entrances||[]).map(e=>({ix:e.ix, iy:e.iy})),
+    ratio: state.ratio, style: state.style, material: state.material,
+    massing: state.massing, loc: state.loc || '',
+    feas: JSON.parse(JSON.stringify(state.feas || feasDefaults())),
+    ui,
+  };
+}
+function applyProject(p){
+  state.site = JSON.parse(JSON.stringify(p.site));
+  state.mix  = JSON.parse(JSON.stringify(p.mix));
+  state.stack = (p.stack||['retail','apartment']).slice();
+  state.entrances = (p.entrances||[]).map(e=>({ix:e.ix, iy:e.iy}));
+  state.ratio = p.ratio; state.style = p.style; state.material = p.material;
+  state.massing = p.massing; state.loc = p.loc || '';
+  state.feas = JSON.parse(JSON.stringify(p.feas || feasDefaults()));
+  for (const id in (p.ui||{})){ const el = $(id); if (el) el.value = p.ui[id]; }
+  state.options = []; state.edits = {}; state.plan = null; dirtyEdits();
+  if ($('locName')) $('locName').value = state.loc;
+  syncLabels(); paintRatios(); paintMassing(); paintUsePicker();
+  paintStyles(); paintMats(); paintEdgeRows(); coreNote();
+  resize2(); paintSite();
+}
+
+function newProjectId(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function saveProject(name){
+  const list = readStore();
+  const now = Date.now();
+  const snap = projectSnapshot();
+  const r = (state.options.length && state.plan) ? feasibility() : null;
+  const card = {
+    gfa: r ? Math.round(r.sch.gfa) : null,
+    units: r ? r.sale.reduce((a,x)=>a+x.count,0) : null,
+    far: r ? r.sch.far : null,
+    profit: r ? r.profit : null,
+    margin: r ? r.onCost : null,
+    cur: state.feas ? state.feas.cur : 'PKR',
+    fx: state.feas ? state.feas.fx : 280,
+  };
+  let p = list.find(x=>x.id === state.projectId);
+  if (p){ Object.assign(p, { name:name||p.name, data:snap, card, updated:now }); }
+  else {
+    p = { id:newProjectId(), name:name||'Untitled scheme', data:snap, card,
+          created:now, updated:now };
+    list.unshift(p); state.projectId = p.id;
+  }
+  state.projectName = p.name;
+  const ok = writeStore(list);
+  paintProjectName();
+  flag(ok ? 'Saved — ' + p.name
+          : 'Could not save — this browser is blocking local storage');
+  return p;
+}
+function openProject(id){
+  const p = readStore().find(x=>x.id===id); if(!p) return;
+  state.projectId = p.id; state.projectName = p.name;
+  applyProject(p.data); paintProjectName();
+  showView('site'); generate(false);
+  flag('Opened — ' + p.name);
+}
+function duplicateProject(id){
+  const list = readStore(), p = list.find(x=>x.id===id); if(!p) return;
+  const copy = { ...JSON.parse(JSON.stringify(p)), id:newProjectId(),
+                 name:p.name + ' copy', created:Date.now(), updated:Date.now() };
+  list.unshift(copy); writeStore(list); paintDash();
+}
+function deleteProject(id){
+  const list = readStore().filter(x=>x.id!==id);
+  writeStore(list);
+  if (state.projectId === id){ state.projectId = null; state.projectName = 'Untitled scheme'; paintProjectName(); }
+  paintDash();
+}
+function paintProjectName(){
+  const el = $('projName'); if(!el) return;
+  if (document.activeElement !== el) el.value = state.projectName || 'Untitled scheme';
+}
+
+/* ---------------------------------------------------------------------------
+   The dashboard: the saved schemes, and an overview of the one that is open.
+
+   The workflow strip at the top is the point of this screen. The tool used to
+   present every control at once with no sense of order; this says what has
+   been done and what is next, so a scheme can be picked up a week later.
+--------------------------------------------------------------------------- */
+function workflowSteps(){
+  const hasSite = state.site && state.site.pts && state.site.pts.length >= 3;
+  const solved  = state.options.length > 0 && state.plan;
+  const r = solved ? feasibility() : null;
+  const touched = state.feas && JSON.stringify(state.feas) !== JSON.stringify(feasDefaults());
+  return [
+    { n:1, t:'Site',        d:'Boundary and setbacks', done:hasSite,
+      note:hasSite ? `${fmt(Math.round(plotArea()))} sq ft · ${state.site.pts.length} edges` : 'Draw or trace the plot',
+      go:'site' },
+    { n:2, t:'Rules',       d:'FAR, height, grid', done:hasSite,
+      note:`FAR 1:${state.ratio} · ${state.cfg?state.cfg.stories:'—'} storeys`, go:'site' },
+    { n:3, t:'Program',     d:'What goes on each floor', done:!!state.stack.length,
+      note:[...new Set(state.stack)].map(u=>USE_LABEL[u]||u).join(', '), go:'site' },
+    { n:4, t:'Scheme',      d:'Plans and massing', done:solved,
+      note:solved ? `${r.sale.reduce((a,x)=>a+x.count,0)} units · ${fmt(Math.round(r.sch.gfa))} sq ft` : 'Not generated yet',
+      go:'plans' },
+    { n:5, t:'Feasibility', d:'Cost and return', done:solved && touched,
+      note:solved ? `${(r.onCost*100).toFixed(1)}% on cost · rates are placeholders` : 'Needs a scheme',
+      go:'feas' },
+  ];
+}
+
+function paintDash(){
+  const steps = workflowSteps();
+  const solved = state.options.length > 0 && state.plan;
+  const r = solved ? feasibility() : null;
+  const M = v => r ? fmtMoney(v, r.f) : '—';
+  const list = readStore();
+
+  const head = `
+    <h2>${state.projectName || 'Untitled scheme'}</h2>
+    <p class="sub">${state.loc ? state.loc + ' &middot; ' : ''}
+      ${list.length} saved scheme${list.length===1?'':'s'}
+      ${storeWorks ? '' : '&middot; <b class="warn">local storage unavailable, projects last only this session</b>'}</p>
+
+    <div class="flow">
+      ${steps.map(s=>`<div class="step${s.done?' done':''}" data-go="${s.go}">
+        <span class="n">${s.done?'✓':s.n}</span>
+        <b>${s.t}</b><i>${s.d}</i><em>${s.note}</em></div>`).join('')}
+    </div>`;
+
+  const nums = solved ? `
+    <h3>Scheme</h3>
+    <div class="tot">
+      <div><span>Plot</span><b class="num">${fmt(Math.round(r.plot))} sq ft</b></div>
+      <div><span>Gross floor area</span><b class="num">${fmt(Math.round(r.sch.gfa))} sq ft</b></div>
+      <div><span>Achieved FAR</span><b class="num">1:${r.sch.far.toFixed(2)}</b></div>
+      <div><span>Storeys</span><b class="num">${state.cfg.stories}</b></div>
+      <div><span>Units</span><b class="num">${r.sale.reduce((a,x)=>a+x.count,0)}</b></div>
+      <div><span>Efficiency</span><b class="num">${(r.sch.eff*100).toFixed(0)}%</b></div>
+    </div>
+
+    <h3>Feasibility <i class="tiny">indicative rates</i></h3>
+    <div class="tot">
+      <div><span>Development cost</span><b class="num">${M(r.tdc)}</b></div>
+      <div><span>Gross development value</span><b class="num">${M(r.gdv)}</b></div>
+      <div><span>Profit</span><b class="num ${r.profit>=0?'':'warn'}">${M(r.profit)}</b></div>
+      <div><span>Margin on cost</span><b class="num ${r.onCost<0.15?'warn':''}">${(r.onCost*100).toFixed(1)}%</b></div>
+      <div><span>Breakeven rate</span><b class="num">${fmt(Math.round(r.f.cur==='USD'?r.breakeven/(r.f.fx||280):r.breakeven))}</b></div>
+      <div><span>Residual land value</span><b class="num">${M(r.resid)}</b></div>
+    </div>
+
+    <h3>Unit mix</h3>
+    <table class="sch"><thead><tr><th>Type</th><th>Count</th><th>Avg area</th><th>Total</th><th>Value</th></tr></thead>
+      <tbody>${r.sale.map(l=>`<tr>
+        <td><span class="nm"><i style="background:${USE_COL[l.use]||'#c7c7cc'}"></i>${l.name}</span></td>
+        <td>${l.count}</td><td>${fmt(Math.round(l.area/Math.max(1,l.count)))}</td>
+        <td>${fmt(Math.round(l.area))}</td><td>${M(l.value)}</td></tr>`).join('')}
+      </tbody></table>`
+    : `<div class="empty-note">No scheme generated yet. Set the site and rules,
+        then press <b>Generate options</b> to build one.</div>`;
+
+  const cards = `
+    <h3>Saved schemes</h3>
+    <div class="projrow">
+      <button class="btn sm" id="pNew">New scheme</button>
+      <button class="btn quiet sm" id="pSave">Save this scheme</button>
+    </div>
+    ${list.length ? `<div class="pgrid">${list.map(p=>`
+      <div class="pcard${p.id===state.projectId?' on':''}" data-id="${p.id}">
+        <b>${p.name}</b>
+        <span class="tiny">${new Date(p.updated).toLocaleDateString()} &middot;
+          ${p.card && p.card.gfa ? fmt(p.card.gfa)+' sq ft' : 'not solved'}</span>
+        <span class="tiny">${p.card && p.card.units ? p.card.units+' units' : ''}
+          ${p.card && p.card.margin!=null ? '&middot; '+(p.card.margin*100).toFixed(0)+'% on cost' : ''}</span>
+        <div class="pacts">
+          <button data-act="open" data-id="${p.id}">Open</button>
+          <button data-act="dup"  data-id="${p.id}">Duplicate</button>
+          <button data-act="del"  data-id="${p.id}" class="danger">Delete</button>
+        </div>
+      </div>`).join('')}</div>`
+      : `<div class="empty-note">Nothing saved yet. Build a scheme and press
+          <b>Save this scheme</b> to keep it.</div>`}`;
+
+  $('dashSheet').innerHTML = head + nums + cards;
+
+  $('dashSheet').querySelectorAll('.step').forEach(el=>
+    el.onclick = () => showView(el.dataset.go));
+  $('pNew').onclick = () => {
+    state.projectId = null; state.projectName = 'Untitled scheme';
+    state.site = DEFAULT_PLOT(); state.mix = DEFAULT_MIX();
+    state.stack = ['retail','apartment']; state.entrances = [];
+    state.feas = feasDefaults(); state.options = []; state.plan = null;
+    paintProjectName(); paintEdgeRows(); resize2(); paintSite();
+    showView('site'); generate(false);
+  };
+  $('pSave').onclick = () => {
+    const n = ($('projName').value || '').trim();
+    saveProject(n || 'Untitled scheme'); paintDash();
+  };
+  $('dashSheet').querySelectorAll('.pacts button').forEach(b=>{
+    b.onclick = e => {
+      e.stopPropagation();
+      const id = b.dataset.id;
+      if (b.dataset.act === 'open') openProject(id);
+      else if (b.dataset.act === 'dup') duplicateProject(id);
+      else if (b.dataset.act === 'del'){
+        // a second click confirms: dialogs are refused in some embeddings, and
+        // a destructive action should not depend on one
+        if (b.dataset.armed === '1'){ deleteProject(id); return; }
+        $('dashSheet').querySelectorAll('.pacts button[data-act=del]')
+          .forEach(x=>{ x.dataset.armed=''; x.textContent='Delete'; });
+        b.dataset.armed = '1'; b.textContent = 'Confirm?';
+        setTimeout(()=>{ if(b.dataset.armed==='1'){ b.dataset.armed=''; b.textContent='Delete'; } }, 4000);
+      }
+    };
+  });
+}
+
 /* ================= run ================= */
 let busy=false;
 async function generate(animate){
@@ -5098,8 +5697,9 @@ function plotCentre(){ const xs=state.site.pts.map(p=>p.x), ys=state.site.pts.ma
 $('tFit').onclick=()=>{ state.vw=null; paintSite(); if(state.vg) frameCamera(); };
 $('tReset').onclick=()=>{ state.site=DEFAULT_PLOT(); state.drawing=false; setTool('select');
   paintEdgeRows(); plotNote(); paintSite(); invalidate(); };
-for(const [id,v] of [['vwSite','site'],['vwMass','mass'],['vwRender','render'],
-  ['vwPlans','plans'],['vwInv','inv']]) $(id).onclick=()=>showView(v);
+for(const [id,v] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
+  ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas']])
+  $(id).onclick=()=>showView(v);
 $('dimEdit').addEventListener('keydown',e=>{
   if(e.key==='Enter'){ e.preventDefault(); closeDim(true); }
   if(e.key==='Escape'){ e.preventDefault(); closeDim(false); }
@@ -5135,11 +5735,13 @@ new ResizeObserver(()=>{ if($('planModal').classList.contains('on')) drawBigPlan
    the 3D stack is unavailable the drawing board still comes up fully drawn
    instead of a blank white panel. initGL swallows its own failure. */
 syncLabels(); coreNote(); initSite();
+$('projName').addEventListener('input', e => { state.projectName = e.target.value; });
+$('projName').addEventListener('blur', () => { if (state.projectId) saveProject(state.projectName); });
 paintRatios(); paintMassing(); paintUsePicker(); paintStyles(); paintMats();
 paintEdgeRows(); resize2(); paintSite();
 showView('site');
 initGL();
-generate(true);
+generate(true).then(()=>{ paintProjectName(); showView('dash'); });
 
 </script>
 </body>

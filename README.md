@@ -1,4 +1,4 @@
-# Buildit
+# buildIT
 
 A building generator and proposal configurator for commercial and mixed-use schemes —
 a browser-based parametric massing and floor-plan tool for early-stage architectural
@@ -7,7 +7,7 @@ ratio, and it solves a buildable envelope — then gives you storey plans, a str
 frame, a rendered 3D view and an area schedule. Single HTML file, no build step, no
 server, no account. Open it and it runs.
 
-![Rendered view](docs/render.png)
+![Dashboard](docs/dashboard.png)
 
 ## What it does
 
@@ -30,14 +30,30 @@ drink, amenity, services, parking, circulation). Assign uses floor by floor; the
 solver distributes them across each plate, keeps lift shafts pinned to the same grid
 position on every storey, and guarantees that every unit touches circulation.
 
+**Dashboard.** Every scheme opens on a project overview: a five-step workflow
+strip showing what is done and what is next, the headline areas, the appraisal
+summary and the unit mix. Schemes are saved in the browser and can be reopened,
+duplicated or deleted. A saved project holds the *inputs* only — site, rules,
+program and appraisal assumptions — so it stays small and is re-solved on open
+rather than going stale against a newer solver.
+
+**Cost and feasibility.** A residual appraisal built from the area schedule, so
+it always describes the scheme on screen. Build cost per element, land, design
+and approvals, contingency, finance and marketing stack up into a development
+cost; the saleable area is valued unit by unit into a GDV. It reports profit,
+margin on cost and on GDV, cost per sq ft, and the two numbers that actually
+decide a deal — the **breakeven sale rate** and the **residual land value**,
+which is the most you could pay for the site and still hit your target margin.
+Every rate is editable in place, and switchable between PKR and USD.
+
 **Output.** Massing view, rendered view with facade styles and materials, storey
 plans drawn as architectural plans (poché walls, door swings, glazing, stair treads,
 grid bubbles), an editable plan view, and an area schedule exportable as JSON or CSV.
 
 | | |
 |---|---|
-| ![Massing](docs/massing.png) | ![Plans](docs/plans.png) |
-| Massing — colour-coded by use | Storey plans with grid and annotation |
+| ![Feasibility](docs/feasibility.png) | ![Plans](docs/plans.png) |
+| Residual appraisal, rates editable in place | Storey plans with grid and annotation |
 
 ## Running it
 
@@ -85,6 +101,17 @@ circulation never above 21%. Unit-area error median 2.7%, 90th percentile 11%.
 ## Known limitations
 
 Worth reading before trusting the output.
+
+**Every cost and sale rate is an indicative placeholder.** They are starting
+points chosen to be plausible, not market data, and they have not been checked
+against current tender prices or comparables. Replace them with your own figures
+before an appraisal from this leaves your desk. The method is sound; the inputs
+are yours to supply.
+
+**Saved schemes live in one browser.** Projects are kept in that browser's local
+storage — they do not sync between machines, and clearing site data deletes
+them. Where storage is blocked entirely the app says so and keeps projects for
+the session only.
 
 **The wall-editing tools are inert.** They act on bay edges, which the plans no
 longer use, so the zoomed plan is read-only until they are rebuilt against
