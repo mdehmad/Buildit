@@ -2835,7 +2835,7 @@ const state = {
   site: DEFAULT_PLOT(), mix: DEFAULT_MIX(), vg:null, pg:null, options:[], pick:0,
   floor:-1, cfg:null, reveal:1, view:'site', tool:'select',
   ratio:4, stack:['retail','apartment'], paint:'apartment', painting:false, size:null,
-  style:'curtain', material:'concrete', massing:'taper', entrances:[], entHover:-1, dimHits:[], dimEdit:-1,
+  style:'curtain', material:'concrete', massing:'taper', entrances:[], entHoverPt:null, dimHits:[], dimEdit:-1,
   img:null, imgOp:0.55, cal:null, loc:'',
   edits:{}, _eff:null, mLvl:0, mTool:'sel', mRoom:null, mHot:null, mPaint:false,
   mSegs:[], mAreas:{}, mEdited:false,
@@ -2976,17 +2976,62 @@ function faceOfBay(id){
   return bestK;
 }
 // the doors on the building: the ones placed by hand, or one chosen for you
+/* ---------------------------------------------------------------------------
+   Entrances live in site coordinates, not bay indices.
+
+   They used to be stored as {ix,iy} on the solved structural grid, which meant
+   an entrance could not exist until after a scheme had been generated -- the
+   wrong way round, since where a building is entered from is a decision about
+   the street, taken before anything is laid out. Storing the point on the plot
+   instead means it can be placed straight after the boundary, survives the
+   plot being reshaped, and simply re-resolves to whichever bay it falls in
+   each time the scheme is solved.
+--------------------------------------------------------------------------- */
+
+/* Nearest point on the plot boundary, and how far the click was from it. */
+function snapToBoundary(p){
+  const pts = state.site.pts; let best = null;
+  for (let i = 0; i < pts.length; i++){
+    const a = pts[i], b = pts[(i+1) % pts.length];
+    const vx = b.x-a.x, vy = b.y-a.y, L2 = vx*vx + vy*vy;
+    const t = L2 ? Math.max(0, Math.min(1, ((p.x-a.x)*vx + (p.y-a.y)*vy) / L2)) : 0;
+    const q = { x:a.x + vx*t, y:a.y + vy*t };
+    const d = Math.hypot(p.x-q.x, p.y-q.y);
+    if (!best || d < best.d) best = { x:q.x, y:q.y, d, edge:i };
+  }
+  return best;
+}
+
+/* The bay an entrance point resolves to: the nearest ground-floor bay that has
+   an outer face. Returns -1 while there is no usable grid. */
+function bayForEntrance(pt){
+  const vg = state.vg; if (!vg || state.vgStale) return -1;
+  const live = doorBays(); if (!live.length) return -1;
+  const f = toGrid(pt);
+  let best = -1, bd = Infinity;
+  for (const id of live){
+    const v = vg.voxels[id];
+    const cx = Math.max(v.x, Math.min(f.x, v.x+v.w));
+    const cy = Math.max(v.y, Math.min(f.y, v.y+v.d));
+    const d = Math.hypot(f.x-cx, f.y-cy);
+    if (d < bd){ bd = d; best = id; }
+  }
+  return best;
+}
+
 function entranceList(){
-  const vg = state.vg; if (!vg) return [];
-  const live = doorBays();
-  if (!live.length) return [];
-  const out = [];
+  const vg = state.vg; if (!vg || state.vgStale) return [];
+  const live = doorBays(); if (!live.length) return [];
+  const out = [], seen = new Set();
   for (const m of (state.entrances || [])){
-    const id = vg.index.get(`0,${m.ix},${m.iy}`);
-    if (id === undefined || !live.includes(id)) continue;
-    out.push({ id, face: faceOfBay(id), manual: true });
+    const id = bayForEntrance(m);
+    if (id < 0 || seen.has(id)) continue;
+    seen.add(id);
+    out.push({ id, face: faceOfBay(id), manual: true, at: m });
   }
   if (out.length) return out;
+
+  /* Nothing placed: put one on the longest street frontage. */
   const { e } = frontEdge();
   const midG = toGrid({ x:(e.a.x+e.b.x)/2, y:(e.a.y+e.b.y)/2 });
   const ang = vg.angle || 0;
@@ -3001,8 +3046,8 @@ function entranceList(){
     const d = Math.hypot(v.x+v.w/2-midG.x, v.y+v.d/2-midG.y);
     if (d < bd){ bd = d; best = id; }
   }
-  if (best === -1) best = live[0];
-  return [{ id: best, face: faceOfBay(best), manual: false }];
+  if (best < 0) return [];
+  return [{ id: best, face: faceOfBay(best), manual: false, at: null }];
 }
 function entranceInfo(){ const l = entranceList(); return l.length ? l[0] : null; }
 
@@ -3300,20 +3345,10 @@ function paintSite(){
     const trace = pl => { g.beginPath();
       pl.forEach((q,qi)=>{ const [qx,qy]=toPx(v,q); qi?g.lineTo(qx,qy):g.moveTo(qx,qy); });
       g.closePath(); };
-    if (state.tool==='entrance'){
-      for (const id of doorBays()){
-        const cell = state.vg.voxels[id];
-        trace(poly(cell));
-        g.fillStyle = (id===state.entHover) ? 'rgba(122,46,30,.30)' : 'rgba(122,46,30,.09)';
-        g.fill();
-        g.strokeStyle = (id===state.entHover) ? '#7a2e1e' : 'rgba(122,46,30,.45)';
-        g.lineWidth = (id===state.entHover) ? 2 : 1;
-        g.stroke();
-      }
-    }
+
     g.font='600 9px -apple-system,Inter,sans-serif';
     g.textAlign='center'; g.textBaseline='middle';
-    for (const en of (state.vgStale ? [] : entranceList())){
+    for (const en of ((state.vg && !state.vgStale) ? entranceList() : [])){
       const cell = state.vg.voxels[en.id];
       if (!cell) continue;
       trace(poly(cell));
@@ -3338,6 +3373,44 @@ function paintSite(){
       g.fillText(en.manual ? 'ENTRY' : 'ENTRY · auto', cxp, cyp);
     }
   }
+  /* Entrance markers, drawn from the stored boundary points. These exist
+     whether or not a scheme has been solved, which is the whole point of
+     keeping them in site coordinates: you place the door, then generate. */
+  if (state.site.pts.length >= 3){
+    const ents = state.entrances || [];
+    const drawDoor = (pt, solid) => {
+      const [ex,ey] = toPx(v, pt);
+      const e2 = edgeData(state.site.pts)[ (snapToBoundary(pt)||{edge:0} ).edge ] ;
+      const nx = e2 ? e2.nx : 0, ny = e2 ? e2.ny : 1;
+      const tx = -ny, ty = nx;                       // along the boundary
+      const half = Math.max(9, 11 * v.k);
+      g.strokeStyle = '#7a2e1e';
+      g.lineWidth = solid ? 5 : 3;
+      g.setLineDash(solid ? [] : [5,4]);
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(ex - tx*half, ey - ty*half);
+      g.lineTo(ex + tx*half, ey + ty*half);
+      g.stroke();
+      g.setLineDash([]); g.lineCap = 'butt';
+      // a short leader pointing in, the way a door swing is indicated
+      g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(ex, ey);
+      g.lineTo(ex + nx*half*0.85, ey + ny*half*0.85); g.stroke();
+    };
+    for (const pt of ents) drawDoor(pt, true);
+    if (state.tool === 'entrance' && state.entHoverPt){
+      const dup = ents.some(m => Math.hypot(m.x-state.entHoverPt.x, m.y-state.entHoverPt.y) < 18);
+      if (!dup) drawDoor(state.entHoverPt, false);
+    }
+    if (state.tool === 'entrance' && !ents.length){
+      g.font='500 11px var(--mono),monospace';
+      g.fillStyle='#7a2e1e'; g.textAlign='center';
+      const c = centroid(state.site.pts), [cx,cy] = toPx(v, c);
+      g.fillText('Click the boundary to place an entrance', cx, cy);
+    }
+  }
+
   pts.forEach(p=>{
     const [x,y]=toPx(v,p);
     g.beginPath(); g.arc(x,y,6.5,0,7); g.fillStyle='#fff'; g.fill();
@@ -3409,23 +3482,26 @@ function siteDown(e){
     return;
   }
   if (state.tool==='entrance'){
-    if (!state.vg || state.vgStale){
-      flag('Generate options first \u2014 the structural grid has changed'); return; }
-    const id = bayAtPoint(px, py);
-    if (id < 0) return;
-    if (!openFaces(state.vg, id).length){
-      flag('That bay is inside the building — pick one on an outer edge'); return;
-    }
-    const v = state.vg.voxels[id];
-    const at = (state.entrances || []).findIndex(m => m.ix===v.ix && m.iy===v.iy);
-    if (at >= 0){
-      state.entrances.splice(at, 1);
-      flag(state.entrances.length ? state.entrances.length+' entrances' : 'Back to the automatic entrance');
+    /* An entrance is a decision about the street, so it only needs the plot.
+       The click is snapped onto the boundary and kept in site coordinates;
+       which bay it belongs to is worked out whenever a scheme is solved. */
+    if (!state.site.pts || state.site.pts.length < 3){
+      flag('Draw the plot boundary first'); return; }
+    const w = toFt(state.vw, px, py);
+    const sn = snapToBoundary(w);
+    if (!sn || sn.d > 45){
+      flag('Click on or near the plot boundary to place an entrance'); return; }
+    const near = (state.entrances || [])
+      .findIndex(m => Math.hypot(m.x-sn.x, m.y-sn.y) < 18);
+    if (near >= 0){
+      state.entrances.splice(near, 1);
+      flag(state.entrances.length ? state.entrances.length+' entrances'
+                                  : 'Back to the automatic entrance');
     } else {
-      state.entrances = (state.entrances || []).concat([{ ix:v.ix, iy:v.iy }]);
+      state.entrances = (state.entrances || []).concat([{ x:sn.x, y:sn.y }]);
       flag(state.entrances.length>1 ? state.entrances.length+' entrances' : 'Entrance set');
     }
-    paintSite(); invalidate(); refreshAll();
+    paintSite(); invalidate(); if (state.options.length) refreshAll();
     return;
   }
   if (state.tool==='select'){
@@ -3454,9 +3530,12 @@ function siteMove(e){
   const [px,py]=local(e);
   if (state.drawing){ state.cursor=[px,py]; paintSite(); return; }
   if (state.tool==='entrance'){
-    const id = bayAtPoint(px, py);
-    const ok = (id >= 0 && state.vg && openFaces(state.vg, id).length) ? id : -1;
-    if (ok !== state.entHover){ state.entHover = ok; paintSite(); }
+    // show where on the boundary the click would land
+    const sn = (state.site.pts.length>=3 && state.vw)
+      ? snapToBoundary(toFt(state.vw, px, py)) : null;
+    const ok = (sn && sn.d <= 45) ? sn : null;
+    const a = state.entHoverPt, same = ok && a && a.x===ok.x && a.y===ok.y;
+    if (!same){ state.entHoverPt = ok; paintSite(); }
     return;
   }
   if (state.tool==='cal' && state.cal && !state.calDone){
@@ -3564,7 +3643,7 @@ function setTool(t){
   for (const [id,name] of [['tSelect','select'],['tDraw','draw'],['tAdd','add'],['tDel','del'],['tEnt','entrance'],['tImg','img'],['tCal','cal']])
     $(id).classList.toggle('on', name===t);
   if (t!=='cal') state.cal=null;
-  if (t!=='entrance') state.entHover=-1;
+  if (t!=='entrance') state.entHoverPt=null;
   $('site').style.cursor = (t==='draw'||t==='entrance'||t==='cal') ? 'crosshair' : t==='img' ? 'move' : t==='del' ? 'not-allowed' : 'default';
   if (t!=='select') closeDim(false);
   paintSite();
@@ -5182,6 +5261,38 @@ function buildPlans(vg, pg, cfg){
       if (r.isCore) r.use = r.label === 'Lift' ? 'elevator' : 'stairs';
     }
     for (const c of plan.corridor) c.use = 'corridor';
+
+    /* On the ground floor, the room an entrance lands in becomes the lobby.
+       A marked entrance used to be only a marker: the plan had no lobby, so a
+       multistorey building was entered straight into a shop. Every room is cut
+       against the corridor by construction, so relabelling one keeps the route
+       from street to lift intact. A lobby is not saleable, so it drops out of
+       the net area and the appraisal on its own. */
+    if (s === 0 && state.vg && !state.vgStale){
+      for (const en of entranceList()){
+        const v = state.vg.voxels[en.id]; if (!v) continue;
+        /* Pick the room that shares the most floor with the entrance bay.
+           Matching on the bay's centre point missed whenever that centre fell
+           in the corridor, which left the entrance without a lobby. */
+        let hit = null, bestOv = 0, nearest = null, nd = Infinity;
+        for (const r of plan.rooms){
+          if (r.isCore || r.isLobby) continue;
+          const ox = Math.min(r.x+r.w, v.x+v.w) - Math.max(r.x, v.x);
+          const oy = Math.min(r.y+r.d, v.y+v.d) - Math.max(r.y, v.y);
+          const ov = (ox > 0 && oy > 0) ? ox*oy : 0;
+          if (ov > bestOv){ bestOv = ov; hit = r; }
+          const dx = Math.max(r.x-(v.x+v.w/2), 0, (v.x+v.w/2)-(r.x+r.w));
+          const dy = Math.max(r.y-(v.y+v.d/2), 0, (v.y+v.d/2)-(r.y+r.d));
+          const d = Math.hypot(dx, dy);
+          if (d < nd){ nd = d; nearest = r; }
+        }
+        if (!hit && nd < 30) hit = nearest;    // bay sat wholly in the corridor
+        if (hit){
+          hit.use = 'entrance'; hit.label = 'Entrance lobby';
+          hit.isLobby = true; delete hit.target;
+        }
+      }
+    }
     plan.use = use;
     plan.gross = plate.w * plate.d;
     plan.net   = plan.rooms.reduce((a,r)=>a + (r.isCore ? 0 : r.area), 0);
@@ -5535,7 +5646,7 @@ function projectSnapshot(){
     site: JSON.parse(JSON.stringify(state.site)),
     mix:  JSON.parse(JSON.stringify(state.mix)),
     stack: state.stack.slice(),
-    entrances: (state.entrances||[]).map(e=>({ix:e.ix, iy:e.iy})),
+    entrances: (state.entrances||[]).map(e=>({x:e.x, y:e.y})),
     ratio: state.ratio, style: state.style, material: state.material,
     massing: state.massing, loc: state.loc || '',
     feas: JSON.parse(JSON.stringify(state.feas || feasDefaults())),
@@ -5546,7 +5657,9 @@ function applyProject(p){
   state.site = JSON.parse(JSON.stringify(p.site));
   state.mix  = JSON.parse(JSON.stringify(p.mix));
   state.stack = (p.stack||['retail','apartment']).slice();
-  state.entrances = (p.entrances||[]).map(e=>({ix:e.ix, iy:e.iy}));
+  // entrances saved before they moved to site coordinates cannot be placed
+  state.entrances = (p.entrances||[]).filter(e=>e.x!=null&&e.y!=null)
+                                     .map(e=>({x:e.x, y:e.y}));
   state.ratio = p.ratio; state.style = p.style; state.material = p.material;
   state.massing = p.massing; state.loc = p.loc || '';
   state.feas = JSON.parse(JSON.stringify(p.feas || feasDefaults()));
@@ -5628,14 +5741,18 @@ function workflowSteps(){
     { n:1, t:'Site',        d:'Boundary and setbacks', done:hasSite,
       note:hasSite ? `${fmt(Math.round(plotArea()))} sq ft · ${state.site.pts.length} edges` : 'Draw or trace the plot',
       go:'site' },
-    { n:2, t:'Rules',       d:'FAR, height, grid', done:hasSite,
+    { n:2, t:'Entrance',    d:'Where the street comes in', done:(state.entrances||[]).length>0,
+      note:(state.entrances||[]).length
+        ? `${state.entrances.length} placed on the boundary`
+        : 'One is chosen automatically on the longest frontage', go:'site' },
+    { n:3, t:'Rules',       d:'FAR, height, grid', done:hasSite,
       note:`FAR 1:${state.ratio} · ${state.cfg?state.cfg.stories:'—'} storeys`, go:'site' },
-    { n:3, t:'Program',     d:'What goes on each floor', done:!!state.stack.length,
+    { n:4, t:'Program',     d:'What goes on each floor', done:!!state.stack.length,
       note:[...new Set(state.stack)].map(u=>USE_LABEL[u]||u).join(', '), go:'site' },
-    { n:4, t:'Scheme',      d:'Plans and massing', done:solved,
+    { n:5, t:'Scheme',      d:'Plans and massing', done:solved,
       note:solved ? `${r.sale.reduce((a,x)=>a+x.count,0)} units · ${fmt(Math.round(r.sch.gfa))} sq ft` : 'Not generated yet',
       go:'plans' },
-    { n:5, t:'Feasibility', d:'Cost and return', done:solved && touched,
+    { n:6, t:'Feasibility', d:'Cost and return', done:solved && touched,
       note:solved ? `${(r.onCost*100).toFixed(1)}% on cost · rates are placeholders` : 'Needs a scheme',
       go:'feas' },
   ];
