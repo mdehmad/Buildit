@@ -2841,6 +2841,7 @@ const state = {
   mSegs:[], mAreas:{}, mEdited:false,
   drawing:false, draft:[], drag:null, hotEdge:-1, vw:null, cursor:null, uid:9,
   plan:null, feas:null, projectId:null, projectName:'Untitled scheme',
+  vgStale:true, fitPending:true,
 };
 
 /* ================= config ================= */
@@ -2897,6 +2898,7 @@ function paintRatios(){
 }
 // recompute the derived building and everything that depends on it
 function resize2(){
+  state.fitPending = true;
   const z = sizeNow();
   const bindTxt = z.bind==='far'
     ? 'The ratio is the binding constraint.'
@@ -3188,7 +3190,12 @@ function paintSite(){
   const w=cv.clientWidth, h=cv.clientHeight; if(!w||!h) return;
   cv.width=w*dpr; cv.height=h*dpr;
   const g=sctx; g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
-  const v = state.vw = computeView();
+  /* The view is held still. It used to be recomputed on every repaint, so
+     dragging a corner re-fitted the canvas under the cursor and the drawing
+     appeared to zoom and pan by itself. It now only re-fits on a fresh site,
+     on resize, or when Fit is pressed. */
+  if (!state.vw || state.fitPending){ state.vw = computeView(); state.fitPending = false; }
+  const v = state.vw;
   if (state.img && state.img.el && state.img.el.complete){
     const im=state.img;
     const hft = im.wft * (im.el.naturalHeight/im.el.naturalWidth);
@@ -3306,7 +3313,7 @@ function paintSite(){
     }
     g.font='600 9px -apple-system,Inter,sans-serif';
     g.textAlign='center'; g.textBaseline='middle';
-    for (const en of entranceList()){
+    for (const en of (state.vgStale ? [] : entranceList())){
       const cell = state.vg.voxels[en.id];
       if (!cell) continue;
       trace(poly(cell));
@@ -3402,7 +3409,8 @@ function siteDown(e){
     return;
   }
   if (state.tool==='entrance'){
-    if (!state.vg){ flag('Generate options first, then place the entrances'); return; }
+    if (!state.vg || state.vgStale){
+      flag('Generate options first \u2014 the structural grid has changed'); return; }
     const id = bayAtPoint(px, py);
     if (id < 0) return;
     if (!openFaces(state.vg, id).length){
@@ -4786,7 +4794,14 @@ function showView(v){
   if (v !== 'site' && typeof openPanel === 'function') openPanel(false);
 }
 function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggle('on',!!m); }
-function invalidate(){ if(state.options.length) flag('Inputs changed \u2014 generate again'); }
+/* Inputs have moved on from the solved grid. Anything derived from that grid --
+   the entrance markers above all -- would now be drawn at coordinates that no
+   longer exist on the plot, which is how entries ended up floating outside the
+   boundary. Mark it stale and stop trusting it until the next solve. */
+function invalidate(){
+  state.vgStale = true;
+  if(state.options.length) flag('Inputs changed \u2014 generate again');
+}
 
 /* ============ unit planner ============ */
 /* ============================================================================
@@ -4866,7 +4881,12 @@ function cutRun(len, depth, tA, tB, mix){
   if (!best){
     const n = Math.max(1, Math.round(len / ((tA.target + tB.target) / 2 / depth)));
     const front = len / n;
-    if (front < Math.min(tA.minFront, tB.minFront) * 0.8) return null;
+    /* Judge the leftover on usable width, not on a ratio of the nominal
+       frontage. On a deep band a narrow frontage is still a real flat -- a
+       27 ft segment beside the core on a 44 ft band is two 605 sq ft units,
+       and refusing it left a quarter of that floor empty. 11 ft is about the
+       narrowest a bedroom can be. */
+    if (front < 11) return null;
     const area = front * depth;
     const t = Math.abs(area - tA.target) < Math.abs(area - tB.target) ? tA : tB;
     return Array.from({ length: n }, () => [t, front]);
@@ -4945,7 +4965,7 @@ function unitSkeleton(typ, plate, depth, cw){
     return { runs, corridor, court };
   }
 
-  if (typ === 'bar'){
+  if (typ === 'bar' || typ === 'bar!'){
     /* Corridor down the middle, units both sides, every one with an external
        wall. Depth the bands cannot use widens the corridor rather than being
        left as a dead strip. */
@@ -4955,7 +4975,10 @@ function unitSkeleton(typ, plate, depth, cw){
        about 1.4x the daylight depth a bar stops making sense and the plate
        belongs to the courtyard instead. */
     const band = (short - cw) / 2;
-    if (band < STD.minBand || band > depth * 1.4) return null;
+    if (band < STD.minBand) return null;
+    // the depth cap is a quality rule, not a correctness one: on the relaxed
+    // pass an over-deep band beats leaving the floor empty
+    if (typ === 'bar' && band > depth * 1.4) return null;
     const cwB = cw, alongX = w >= d;
     if (alongX){
       runs = [{ tag:'N', x:x, y:y,     len:w, depth:band, axis:'x', flip:false },
@@ -5045,8 +5068,14 @@ function planStorey(plate, kind, opts = {}){
   const nStair = opts.stairs != null ? opts.stairs : 2;
   const A = plate.w * plate.d;
 
+  /* Normal passes first. If none of them can carry the plate, run again with
+     the quality caps relaxed: a plate between about 93 and 98 ft deep is too
+     deep for a bar at its daylight limit and too shallow for a courtyard ring,
+     and used to fall through both and leave the storey completely empty. An
+     unusually deep unit is a defect; a floor with nothing on it is a failure. */
   let best = null;
-  for (const typ of ['courtyard', 'bar', 'single']){
+  for (const typ of ['courtyard', 'bar', 'single', 'bar!']){
+    if (typ === 'bar!' && best) break;
     const sk = unitSkeleton(typ, plate, depth, cw);
     if (!sk) continue;
     const plan = fillSkeleton(sk, plate, tA, tB, mix, nLifts, nStair);
@@ -5735,7 +5764,7 @@ async function generate(animate){
     flag('No buildable area \u2014 setbacks consume the plot'); showView('site'); return;
   }
   const pg=buildProgramGraph(vg,cfg);
-  state.vg=vg; state.pg=pg;
+  state.vg=vg; state.pg=pg; state.vgStale=false;
   state.plan=buildPlans(vg,pg,cfg);
   const out=[];
   for(let i=0;i<cfg.nOpts;i++){
@@ -5914,7 +5943,7 @@ function vgSpan(){ const xs=state.site.pts.map(p=>p.x), ys=state.site.pts.map(p=
   return Math.max(Math.max(...xs)-Math.min(...xs), Math.max(...ys)-Math.min(...ys)); }
 function plotCentre(){ const xs=state.site.pts.map(p=>p.x), ys=state.site.pts.map(p=>p.y);
   return { x:(Math.min(...xs)+Math.max(...xs))/2, y:(Math.min(...ys)+Math.max(...ys))/2 }; }
-$('tFit').onclick=()=>{ state.vw=null; paintSite(); if(state.vg) frameCamera(); };
+$('tFit').onclick=()=>{ state.fitPending=true; paintSite(); if(state.vg) frameCamera(); };
 $('tReset').onclick=()=>{ state.site=DEFAULT_PLOT(); state.drawing=false; setTool('select');
   paintEdgeRows(); plotNote(); paintSite(); invalidate(); };
 for(const [id,v] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
