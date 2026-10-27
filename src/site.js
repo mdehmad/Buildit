@@ -150,12 +150,12 @@ function paintSite(){
     g.drawImage(im.el, ix, iy, im.wft*v.k, hft*v.k);
     g.restore();
     if (state.tool==='img'){
-      g.strokeStyle='rgba(0,113,227,.8)'; g.lineWidth=1.5; g.setLineDash([6,4]);
+      g.strokeStyle='rgba(30,111,217,.8)'; g.lineWidth=1.5; g.setLineDash([6,4]);
       g.strokeRect(ix,iy,im.wft*v.k,hft*v.k); g.setLineDash([]);
     }
   }
   const f0=toFt(v,0,0), f1=toFt(v,w,h);
-  for (const [step,col] of [[10,'#f3f3f5'],[50,'#e5e5ea']]){
+  for (const [step,col] of [[10,'#F3F7FC'],[50,'#DCE6F1']]){
     g.strokeStyle=col; g.lineWidth=1; g.beginPath();
     for(let x=Math.floor(f0.x/step)*step;x<f1.x;x+=step){const[px]=toPx(v,{x,y:0});g.moveTo(px+.5,0);g.lineTo(px+.5,h);}
     for(let y=Math.floor(f0.y/step)*step;y<f1.y;y+=step){const[,py]=toPx(v,{x:0,y});g.moveTo(0,py+.5);g.lineTo(w,py+.5);}
@@ -169,21 +169,21 @@ function paintSite(){
   pts.forEach((p,i)=>{const[x,y]=toPx(v,p); i?g.lineTo(x,y):g.moveTo(x,y);});
   if(!state.drawing) g.closePath();
   if(!state.drawing){ g.fillStyle='rgba(255,255,255,.92)'; g.fill(); }
-  g.strokeStyle='#1d1d1f'; g.lineWidth=2; g.stroke();
+  g.strokeStyle='#0F2A43'; g.lineWidth=2; g.stroke();
 
   if (state.drawing){
     if (state.cursor && pts.length){
       const [lx,ly]=toPx(v,pts[pts.length-1]);
-      g.setLineDash([5,4]); g.strokeStyle='#0071e3'; g.lineWidth=1.5;
+      g.setLineDash([5,4]); g.strokeStyle='#1E6FD9'; g.lineWidth=1.5;
       g.beginPath(); g.moveTo(lx,ly); g.lineTo(state.cursor[0],state.cursor[1]); g.stroke();
       g.setLineDash([]);
       const ft=toFt(v,state.cursor[0],state.cursor[1]);
       const run=Math.hypot(ft.x-pts[pts.length-1].x, ft.y-pts[pts.length-1].y);
-      g.fillStyle='#0071e3'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
+      g.fillStyle='#1E6FD9'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
       g.textAlign='left'; g.textBaseline='bottom';
       g.fillText(`${Math.round(run)} ft`, state.cursor[0]+10, state.cursor[1]-6);
     }
-    g.fillStyle='#0071e3';
+    g.fillStyle='#1E6FD9';
     pts.forEach((p,i)=>{const[x,y]=toPx(v,p);g.beginPath();g.arc(x,y,i===0?6:4,0,7);g.fill();});
     scaleBar(g,v,w,h); return;
   }
@@ -191,7 +191,7 @@ function paintSite(){
   const c=readCfg();
   const vg=buildVoxelGraph({pts:state.site.pts,setbacks:state.site.setbacks},
     {stories:1,upperSetback:0,bay:c.bay,gridAngle:c.gridAngle});
-  g.fillStyle='rgba(0,113,227,.12)'; g.strokeStyle='rgba(0,113,227,.32)'; g.lineWidth=1;
+  g.fillStyle='rgba(30,111,217,.12)'; g.strokeStyle='rgba(30,111,217,.32)'; g.lineWidth=1;
   const W2 = p => vg.angle ? rotPt(p, vg.angle, vg.pivot) : p;
   for (const cell of vg.voxels){
     const c4=[{x:cell.x,y:cell.y},{x:cell.x+cell.w,y:cell.y},
@@ -210,8 +210,8 @@ function paintSite(){
       const ix=e.nx*sb*v.k, iy=e.ny*sb*v.k;
       g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by);
       g.lineTo(bx+ix,by+iy); g.lineTo(ax+ix,ay+iy); g.closePath();
-      g.fillStyle = hot?'rgba(194,112,58,.26)':'rgba(194,112,58,.1)'; g.fill();
-      g.strokeStyle = hot?'#c2703a':'rgba(194,112,58,.42)';
+      g.fillStyle = hot?'rgba(140,194,255,.34)':'rgba(207,229,255,.38)'; g.fill();
+      g.strokeStyle = hot?'#C27C1E':'rgba(140,194,255,.55)';
       g.setLineDash([5,4]); g.lineWidth=hot?1.8:1;
       g.beginPath(); g.moveTo(ax+ix,ay+iy); g.lineTo(bx+ix,by+iy); g.stroke(); g.setLineDash([]);
     }
@@ -224,11 +224,11 @@ function paintSite(){
       g.fillStyle='rgba(255,255,255,.75)';
       g.fillRect(lx-tw/2-5, ly-9, tw+10, 18);
     }
-    g.fillStyle = hot?'#c2703a':'#6e6e73';
+    g.fillStyle = hot?'#C27C1E':'#617A94';
     g.fillText(txt, lx, ly);
     if (sb>0){
       const [cx,cy]=toPx(v,{x:mid.x+e.nx*sb/2,y:mid.y+e.ny*sb/2});
-      g.fillStyle = hot?'#c2703a':'#b0854f'; g.fillText(`${sb}'`,cx,cy);
+      g.fillStyle = hot?'#C27C1E':'#B7700E'; g.fillText(`${sb}'`,cx,cy);
     }
   });
   if (state.tool==='add'){
@@ -236,7 +236,7 @@ function paintSite(){
     edges.forEach(e=>{
       const [x,y]=toPx(v,{x:(e.a.x+e.b.x)/2,y:(e.a.y+e.b.y)/2});
       g.beginPath(); g.arc(x,y,5,0,7);
-      g.fillStyle='#fff'; g.fill(); g.strokeStyle='#0071e3'; g.stroke();
+      g.fillStyle='#fff'; g.fill(); g.strokeStyle='#1E6FD9'; g.stroke();
     });
   }
   // entrances: the bays that can take one while the tool is live, then the doors
@@ -253,9 +253,9 @@ function paintSite(){
       const cell = state.vg.voxels[en.id];
       if (!cell) continue;
       trace(poly(cell));
-      g.fillStyle = en.manual ? 'rgba(122,46,30,.34)' : 'rgba(122,46,30,.20)';
+      g.fillStyle = en.manual ? 'rgba(22,89,180,.34)' : 'rgba(22,89,180,.20)';
       g.fill();
-      g.strokeStyle='#7a2e1e'; g.lineWidth=2.4;
+      g.strokeStyle='#1659B4'; g.lineWidth=2.4;
       if (!en.manual) g.setLineDash([5,3]);
       g.stroke(); g.setLineDash([]);
       if (en.face >= 0){
@@ -266,11 +266,11 @@ function paintSite(){
         else if (dy===1) { p1={x:cell.x,y:cell.y+cell.d}; p2={x:cell.x+cell.w,y:cell.y+cell.d}; }
         else             { p1={x:cell.x,y:cell.y};        p2={x:cell.x+cell.w,y:cell.y}; }
         const [ax,ay]=toPx(v,fromGrid(p1)), [bx,by]=toPx(v,fromGrid(p2));
-        g.strokeStyle='#7a2e1e'; g.lineWidth=5; g.lineCap='round';
+        g.strokeStyle='#1659B4'; g.lineWidth=5; g.lineCap='round';
         g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.stroke(); g.lineCap='butt';
       }
       const [cxp,cyp]=toPx(v, fromGrid({x:cell.x+cell.w/2, y:cell.y+cell.d/2}));
-      g.fillStyle='#7a2e1e';
+      g.fillStyle='#1659B4';
       g.fillText(en.manual ? 'ENTRY' : 'ENTRY · auto', cxp, cyp);
     }
   }
@@ -285,7 +285,7 @@ function paintSite(){
       const nx = e2 ? e2.nx : 0, ny = e2 ? e2.ny : 1;
       const tx = -ny, ty = nx;                       // along the boundary
       const half = Math.max(9, 11 * v.k);
-      g.strokeStyle = '#7a2e1e';
+      g.strokeStyle = '#1659B4';
       g.lineWidth = solid ? 5 : 3;
       g.setLineDash(solid ? [] : [5,4]);
       g.lineCap = 'round';
@@ -306,7 +306,7 @@ function paintSite(){
     }
     if (state.tool === 'entrance' && !ents.length){
       g.font='500 11px var(--mono),monospace';
-      g.fillStyle='#7a2e1e'; g.textAlign='center';
+      g.fillStyle='#1659B4'; g.textAlign='center';
       const c = centroid(state.site.pts), [cx,cy] = toPx(v, c);
       g.fillText('Click the boundary to place an entrance', cx, cy);
     }
@@ -315,29 +315,29 @@ function paintSite(){
   pts.forEach(p=>{
     const [x,y]=toPx(v,p);
     g.beginPath(); g.arc(x,y,6.5,0,7); g.fillStyle='#fff'; g.fill();
-    g.lineWidth=2.5; g.strokeStyle = state.tool==='del' ? '#c2703a' : '#1d1d1f'; g.stroke();
+    g.lineWidth=2.5; g.strokeStyle = state.tool==='del' ? '#C27C1E' : '#0F2A43'; g.stroke();
   });
   if (state.drag){
     const p=pts[state.drag.i], [x,y]=toPx(v,p);
-    g.fillStyle='#1d1d1f'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
+    g.fillStyle='#0F2A43'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
     g.fillText(`${Math.round(p.x)}, ${Math.round(p.y)}`, x, y-17);
   }
   if (state.cal && state.cal.b){
     const [ax,ay]=toPx(v,state.cal.a), [bx,by]=toPx(v,state.cal.b);
-    g.strokeStyle='#0071e3'; g.lineWidth=2.5;
+    g.strokeStyle='#1E6FD9'; g.lineWidth=2.5;
     g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.stroke();
     for (const [qx,qy] of [[ax,ay],[bx,by]]){
-      g.beginPath(); g.arc(qx,qy,4.5,0,7); g.fillStyle='#0071e3'; g.fill();
+      g.beginPath(); g.arc(qx,qy,4.5,0,7); g.fillStyle='#1E6FD9'; g.fill();
     }
   }
   scaleBar(g,v,w,h);
 }
 function scaleBar(g,v,w,h){
   const len=50*v.k, x=w-len-26, y=h-30;
-  g.strokeStyle='#a1a1a6'; g.lineWidth=1.5;
+  g.strokeStyle='#8FA3B8'; g.lineWidth=1.5;
   g.beginPath(); g.moveTo(x,y); g.lineTo(x+len,y);
   g.moveTo(x,y-4); g.lineTo(x,y+4); g.moveTo(x+len,y-4); g.lineTo(x+len,y+4); g.stroke();
-  g.fillStyle='#a1a1a6'; g.font='500 11px -apple-system,Inter,sans-serif';
+  g.fillStyle='#8FA3B8'; g.font='500 11px -apple-system,Inter,sans-serif';
   g.textAlign='center'; g.textBaseline='top'; g.fillText('50 ft',x+len/2,y+6);
 }
 function hit(px,py){

@@ -6,7 +6,7 @@
 // Edits live as overrides on top of the generated plan and everything
 // re-derives from them: walls follow whichever bays belong to which room,
 // so reassigning a bay is how a wall gets moved.
-const WALLK = { solid:'#1d1d1f', partition:'#8e8e93', curtain:'#5a8fb8', none:'#d2d2d7' };
+const WALLK = { solid:'#0F2A43', partition:'#8FA3B8', curtain:'#2F7AE5', none:'#DCE6F1' };
 const WALLW = { solid:3.6, partition:2.0, curtain:2.4, none:1.0 };
 const WALL_ORDER = ['solid','partition','curtain','none'];
 
@@ -109,7 +109,7 @@ function drawBigPlan(){
   const P = (x,y)=>[ox+x*k, oy+y*k];
 
   // plot line, in the grid frame the plan is drawn in
-  g.save(); g.setLineDash([6,4]); g.strokeStyle='#d2d2d7'; g.lineWidth=1; g.beginPath();
+  g.save(); g.setLineDash([6,4]); g.strokeStyle='#DCE6F1'; g.lineWidth=1; g.beginPath();
   vg.pts.forEach((p,i)=>{ const [x,y]=P(p.x,p.y); i?g.lineTo(x,y):g.moveTo(x,y); });
   g.closePath(); g.stroke(); g.restore();
 
@@ -121,17 +121,18 @@ function drawBigPlan(){
   g.setLineDash([]);
   g.font='500 9px -apple-system,Inter,sans-serif'; g.textAlign='center'; g.textBaseline='middle';
   vg.cx.forEach((x,i)=>{const[px]=P(x,0);g.beginPath();g.arc(px,gy0,8,0,7);
-    g.fillStyle='#fff';g.fill();g.strokeStyle='#d2d2d7';g.stroke();
-    g.fillStyle='#86868b';g.fillText(GRIDLET(i),px,gy0);});
+    g.fillStyle='#fff';g.fill();g.strokeStyle='#DCE6F1';g.stroke();
+    g.fillStyle='#617A94';g.fillText(GRIDLET(i),px,gy0);});
   vg.cy.forEach((y,i)=>{const[,py]=P(0,y);g.beginPath();g.arc(gx0,py,8,0,7);
-    g.fillStyle='#fff';g.fill();g.strokeStyle='#d2d2d7';g.stroke();
-    g.fillStyle='#86868b';g.fillText(String(i+1),gx0,py);});
+    g.fillStyle='#fff';g.fill();g.strokeStyle='#DCE6F1';g.stroke();
+    g.fillStyle='#617A94';g.fillText(String(i+1),gx0,py);});
   g.restore();
 
   /* Zoomed view of the same unit plan the thumbnails show. Drawing the bay
      assignment here instead would put a different layout on screen the moment
-     the reader zoomed in. The wall-editing tools act on bay edges, so they are
-     held back until they are rebuilt against units; the plan below is read-only. */
+     the reader zoomed in. The wall tools were once held back here because they
+     acted on bay edges; they act on the demising walls between units now, so
+     the drawing below is editable. */
   const bigPlan = state.plan && state.plan[lvl];
   if (bigPlan && bigPlan.rooms.length){
     drawUnitPlan(g, bigPlan, P, k, true);
@@ -144,21 +145,21 @@ function drawBigPlan(){
       const on = same(w, sel), warm = same(w, hot);
       const [x1,y1] = P(w.axis==='v' ? w.pos : w.lo, w.axis==='v' ? w.lo : w.pos);
       const [x2,y2] = P(w.axis==='v' ? w.pos : w.hi, w.axis==='v' ? w.hi : w.pos);
-      g.strokeStyle = on ? '#E2521D' : warm ? 'rgba(226,82,29,.55)' : 'rgba(17,17,17,.0)';
+      g.strokeStyle = on ? '#1E6FD9' : warm ? 'rgba(226,82,29,.55)' : 'rgba(17,17,17,.0)';
       g.lineWidth = on ? 4 : 3.5; g.lineCap = 'round';
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
       g.lineCap = 'butt';
       if (on){
         const mx=(x1+x2)/2, my=(y1+y2)/2;
-        g.fillStyle='#E2521D'; g.beginPath(); g.arc(mx,my,4,0,7); g.fill();
+        g.fillStyle='#1E6FD9'; g.beginPath(); g.arc(mx,my,4,0,7); g.fill();
       }
     }
     g.save();
     g.textAlign='left'; g.textBaseline='alphabetic';
-    g.font='600 12px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 12px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     const useName = USE_LABEL[pg.floorUse[lvl]] || pg.floorUse[lvl];
     g.fillText(`Level ${lvl+1} \u00b7 ${useName}`, 16, size-28);
-    g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     const nU = bigPlan.rooms.filter(r=>!r.isCore && r.target).length;
     g.fillText(`${bigPlan.typology} plan \u00b7 ${nU} units \u00b7 `
       + `${fmt(Math.round(bigPlan.net))} sq ft net \u00b7 `
@@ -200,7 +201,7 @@ function drawBigPlan(){
     const hot = state.mHot===sg.key;
     g.lineCap='butt';
     if (sg.type==='curtain'){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=WALLW.curtain;
+      g.strokeStyle='#0F2A43'; g.lineWidth=WALLW.curtain;
       const pier=Math.min(L*0.16,3.5*k);
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x1+ux*pier,y1+uy*pier);
       g.moveTo(x2-ux*pier,y2-uy*pier); g.lineTo(x2,y2); g.stroke();
@@ -221,7 +222,7 @@ function drawBigPlan(){
       const ra=pg.rooms[sg.a];
       const into = (ra && ra.type==='corridor') ? 1 : -1;
       const nx=-uy*into, ny=ux*into;
-      g.strokeStyle='#6e6e73'; g.lineWidth=1.2;
+      g.strokeStyle='#617A94'; g.lineWidth=1.2;
       g.beginPath(); g.moveTo(j1[0],j1[1]); g.lineTo(j1[0]+nx*dw,j1[1]+ny*dw); g.stroke();
       g.beginPath(); g.arc(j1[0],j1[1],dw,Math.atan2(ny,nx),Math.atan2(uy,ux),into>0); g.stroke();
     } else {
@@ -235,9 +236,9 @@ function drawBigPlan(){
       const pier=Math.min(L*0.24,4*k);
       g.strokeStyle='#fff'; g.lineWidth=WALLW[sg.type];
       g.beginPath(); g.moveTo(x1+ux*pier,y1+uy*pier); g.lineTo(x2-ux*pier,y2-uy*pier); g.stroke();
-      g.strokeStyle='#5a8fb8'; g.lineWidth=1.4;
+      g.strokeStyle='#2F7AE5'; g.lineWidth=1.4;
       g.beginPath(); g.moveTo(x1+ux*pier,y1+uy*pier); g.lineTo(x2-ux*pier,y2-uy*pier); g.stroke();
-      g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+      g.strokeStyle='#0F2A43'; g.lineWidth=1;
       for (const t of [pier,L-pier]){
         g.beginPath(); g.moveTo(x1+ux*t-uy*3,y1+uy*t+ux*3);
         g.lineTo(x1+ux*t+uy*3,y1+uy*t-ux*3); g.stroke();
@@ -252,7 +253,7 @@ function drawBigPlan(){
       g.globalAlpha=1;
       if (seld){
         const mx=(x1+x2)/2,my=(y1+y2)/2;
-        g.fillStyle='#0071e3';
+        g.fillStyle='#1E6FD9';
         g.beginPath(); g.arc(mx,my,4.5,0,7); g.fill();
       }
     }
@@ -281,7 +282,7 @@ function drawBigPlan(){
     if (state.mCut){
       const [a1,b1]=P(state.mCut.p1[0],state.mCut.p1[1]);
       const [a2,b2]=P(state.mCut.p2[0],state.mCut.p2[1]);
-      g.strokeStyle='#0071e3'; g.lineWidth=4; g.lineCap='round';
+      g.strokeStyle='#1E6FD9'; g.lineWidth=4; g.lineCap='round';
       g.beginPath(); g.moveTo(a1,b1); g.lineTo(a2,b2); g.stroke(); g.lineCap='butt';
     }
   }
@@ -304,45 +305,45 @@ function drawBigPlan(){
     const [bx,by]=P(o.x0,o.y0), [bx2,by2]=P(o.x1,o.y1);
     const bw=bx2-bx, bh=by2-by;
     if (r.type==='stairs' && bw>16 && bh>16){
-      const vert=bh>bw; g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+      const vert=bh>bw; g.strokeStyle='#0F2A43'; g.lineWidth=1;
       for(let i=1;i<9;i++){const t=i/9; g.beginPath();
         if(vert){g.moveTo(bx+4,by+bh*t);g.lineTo(bx+bw-4,by+bh*t);}
         else{g.moveTo(bx+bw*t,by+4);g.lineTo(bx+bw*t,by+bh-4);} g.stroke();}
     }
     if (r.type==='elevator' && bw>14 && bh>14){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+      g.strokeStyle='#0F2A43'; g.lineWidth=1;
       g.beginPath(); g.moveTo(bx+4,by+4); g.lineTo(bx2-4,by2-4);
       g.moveTo(bx2-4,by+4); g.lineTo(bx+4,by2-4); g.stroke();
     }
     if (o.ar < 150) continue;
     const tx=ox+(o.cx/o.n)*k, ty=oy+(o.cy/o.n)*k;
-    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     g.fillText(r.name, tx, ty-13);
-    g.font='400 9.5px -apple-system,Inter,sans-serif'; g.fillStyle='#6e6e73';
+    g.font='400 9.5px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     g.fillText(fmt(o.ar)+' sq ft', tx, ty-1);
     const wft=Math.round(o.x1-o.x0), dft=Math.round(o.y1-o.y0);
-    g.fillStyle='#a1a1a6'; g.fillText(`${wft}' \u00d7 ${dft}'`, tx, ty+11);
+    g.fillStyle='#8FA3B8'; g.fillText(`${wft}' \u00d7 ${dft}'`, tx, ty+11);
   }
   // title and scale
   g.textAlign='left'; g.textBaseline='alphabetic';
-  g.font='600 13px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+  g.font='600 13px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
   g.fillText(`Level ${lvl+1}`, 18, size-26);
-  g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+  g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
   g.fillText(`${USE_LABEL[pg.floorUse[lvl]]||pg.floorUse[lvl]} \u00b7 ${state.cfg.bay} ft structural grid \u00b7 1 bay = ${fmt(state.cfg.bay*state.cfg.bay)} sq ft`, 18, size-12);
   const nx2=size-34, ny2=34;
   g.save(); g.translate(nx2,ny2); g.rotate(-(vg.angle||0));
-  g.strokeStyle='#1d1d1f'; g.lineWidth=1.2;
+  g.strokeStyle='#0F2A43'; g.lineWidth=1.2;
   g.beginPath(); g.moveTo(0,13); g.lineTo(0,-13);
   g.moveTo(-5,-5); g.lineTo(0,-13); g.lineTo(5,-5); g.stroke();
-  g.font='600 9px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+  g.font='600 9px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
   g.textAlign='center'; g.textBaseline='middle'; g.fillText('N',0,22);
   g.restore();
   g.textAlign='left'; g.textBaseline='alphabetic';
   const sl=50*k, sx=size-20-sl, sy=size-20;
-  g.strokeStyle='#a1a1a6'; g.lineWidth=1;
+  g.strokeStyle='#8FA3B8'; g.lineWidth=1;
   g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx+sl,sy);
   g.moveTo(sx,sy-4); g.lineTo(sx,sy+4); g.moveTo(sx+sl,sy-4); g.lineTo(sx+sl,sy+4); g.stroke();
-  g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#a1a1a6';
+  g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#8FA3B8';
   g.textAlign='center'; g.fillText('50 ft', sx+sl/2, sy-8);
 }
 
@@ -596,12 +597,14 @@ function paintRoomList(){
     $('mRooms').innerHTML = [...by.values()]
       .sort((a,b)=>b.area-a.area)
       .map(e=>`<div class="mrow">
-        <i style="background:${USE_COL[e.use]||'#c7c7cc'}"></i>
+        <i style="background:${USE_COL[e.use]||'#C3D0DD'}"></i>
         <span>${e.n>1?e.n+' \u00d7 ':''}${e.label}</span>
         <b>${fmt(Math.round(e.area))}</b></div>`).join('')
       + `<p class="sub" style="margin-top:10px">Units are laid out by frontage
-         along the corridor. The wall tools act on the old bay grid and are
-         being rebuilt for this plan \u2014 the drawing is read-only for now.</p>`;
+         along the corridor. Click a demising wall to select it, drag to move
+         it, or press Delete to merge the two units either side. Every edit is
+         checked and undone if it would strand a unit off the corridor, and a
+         lift or stair cannot be merged away.</p>`;
     return;
   }
 

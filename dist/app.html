@@ -2289,7 +2289,7 @@ function solve(vg, pg, opts = {}) {
 // Edits live as overrides on top of the generated plan and everything
 // re-derives from them: walls follow whichever bays belong to which room,
 // so reassigning a bay is how a wall gets moved.
-const WALLK = { solid:'#1d1d1f', partition:'#8e8e93', curtain:'#5a8fb8', none:'#d2d2d7' };
+const WALLK = { solid:'#0F2A43', partition:'#8FA3B8', curtain:'#2F7AE5', none:'#DCE6F1' };
 const WALLW = { solid:3.6, partition:2.0, curtain:2.4, none:1.0 };
 const WALL_ORDER = ['solid','partition','curtain','none'];
 
@@ -2392,7 +2392,7 @@ function drawBigPlan(){
   const P = (x,y)=>[ox+x*k, oy+y*k];
 
   // plot line, in the grid frame the plan is drawn in
-  g.save(); g.setLineDash([6,4]); g.strokeStyle='#d2d2d7'; g.lineWidth=1; g.beginPath();
+  g.save(); g.setLineDash([6,4]); g.strokeStyle='#DCE6F1'; g.lineWidth=1; g.beginPath();
   vg.pts.forEach((p,i)=>{ const [x,y]=P(p.x,p.y); i?g.lineTo(x,y):g.moveTo(x,y); });
   g.closePath(); g.stroke(); g.restore();
 
@@ -2404,17 +2404,18 @@ function drawBigPlan(){
   g.setLineDash([]);
   g.font='500 9px -apple-system,Inter,sans-serif'; g.textAlign='center'; g.textBaseline='middle';
   vg.cx.forEach((x,i)=>{const[px]=P(x,0);g.beginPath();g.arc(px,gy0,8,0,7);
-    g.fillStyle='#fff';g.fill();g.strokeStyle='#d2d2d7';g.stroke();
-    g.fillStyle='#86868b';g.fillText(GRIDLET(i),px,gy0);});
+    g.fillStyle='#fff';g.fill();g.strokeStyle='#DCE6F1';g.stroke();
+    g.fillStyle='#617A94';g.fillText(GRIDLET(i),px,gy0);});
   vg.cy.forEach((y,i)=>{const[,py]=P(0,y);g.beginPath();g.arc(gx0,py,8,0,7);
-    g.fillStyle='#fff';g.fill();g.strokeStyle='#d2d2d7';g.stroke();
-    g.fillStyle='#86868b';g.fillText(String(i+1),gx0,py);});
+    g.fillStyle='#fff';g.fill();g.strokeStyle='#DCE6F1';g.stroke();
+    g.fillStyle='#617A94';g.fillText(String(i+1),gx0,py);});
   g.restore();
 
   /* Zoomed view of the same unit plan the thumbnails show. Drawing the bay
      assignment here instead would put a different layout on screen the moment
-     the reader zoomed in. The wall-editing tools act on bay edges, so they are
-     held back until they are rebuilt against units; the plan below is read-only. */
+     the reader zoomed in. The wall tools were once held back here because they
+     acted on bay edges; they act on the demising walls between units now, so
+     the drawing below is editable. */
   const bigPlan = state.plan && state.plan[lvl];
   if (bigPlan && bigPlan.rooms.length){
     drawUnitPlan(g, bigPlan, P, k, true);
@@ -2427,21 +2428,21 @@ function drawBigPlan(){
       const on = same(w, sel), warm = same(w, hot);
       const [x1,y1] = P(w.axis==='v' ? w.pos : w.lo, w.axis==='v' ? w.lo : w.pos);
       const [x2,y2] = P(w.axis==='v' ? w.pos : w.hi, w.axis==='v' ? w.hi : w.pos);
-      g.strokeStyle = on ? '#E2521D' : warm ? 'rgba(226,82,29,.55)' : 'rgba(17,17,17,.0)';
+      g.strokeStyle = on ? '#1E6FD9' : warm ? 'rgba(226,82,29,.55)' : 'rgba(17,17,17,.0)';
       g.lineWidth = on ? 4 : 3.5; g.lineCap = 'round';
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
       g.lineCap = 'butt';
       if (on){
         const mx=(x1+x2)/2, my=(y1+y2)/2;
-        g.fillStyle='#E2521D'; g.beginPath(); g.arc(mx,my,4,0,7); g.fill();
+        g.fillStyle='#1E6FD9'; g.beginPath(); g.arc(mx,my,4,0,7); g.fill();
       }
     }
     g.save();
     g.textAlign='left'; g.textBaseline='alphabetic';
-    g.font='600 12px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 12px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     const useName = USE_LABEL[pg.floorUse[lvl]] || pg.floorUse[lvl];
     g.fillText(`Level ${lvl+1} \u00b7 ${useName}`, 16, size-28);
-    g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     const nU = bigPlan.rooms.filter(r=>!r.isCore && r.target).length;
     g.fillText(`${bigPlan.typology} plan \u00b7 ${nU} units \u00b7 `
       + `${fmt(Math.round(bigPlan.net))} sq ft net \u00b7 `
@@ -2483,7 +2484,7 @@ function drawBigPlan(){
     const hot = state.mHot===sg.key;
     g.lineCap='butt';
     if (sg.type==='curtain'){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=WALLW.curtain;
+      g.strokeStyle='#0F2A43'; g.lineWidth=WALLW.curtain;
       const pier=Math.min(L*0.16,3.5*k);
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x1+ux*pier,y1+uy*pier);
       g.moveTo(x2-ux*pier,y2-uy*pier); g.lineTo(x2,y2); g.stroke();
@@ -2504,7 +2505,7 @@ function drawBigPlan(){
       const ra=pg.rooms[sg.a];
       const into = (ra && ra.type==='corridor') ? 1 : -1;
       const nx=-uy*into, ny=ux*into;
-      g.strokeStyle='#6e6e73'; g.lineWidth=1.2;
+      g.strokeStyle='#617A94'; g.lineWidth=1.2;
       g.beginPath(); g.moveTo(j1[0],j1[1]); g.lineTo(j1[0]+nx*dw,j1[1]+ny*dw); g.stroke();
       g.beginPath(); g.arc(j1[0],j1[1],dw,Math.atan2(ny,nx),Math.atan2(uy,ux),into>0); g.stroke();
     } else {
@@ -2518,9 +2519,9 @@ function drawBigPlan(){
       const pier=Math.min(L*0.24,4*k);
       g.strokeStyle='#fff'; g.lineWidth=WALLW[sg.type];
       g.beginPath(); g.moveTo(x1+ux*pier,y1+uy*pier); g.lineTo(x2-ux*pier,y2-uy*pier); g.stroke();
-      g.strokeStyle='#5a8fb8'; g.lineWidth=1.4;
+      g.strokeStyle='#2F7AE5'; g.lineWidth=1.4;
       g.beginPath(); g.moveTo(x1+ux*pier,y1+uy*pier); g.lineTo(x2-ux*pier,y2-uy*pier); g.stroke();
-      g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+      g.strokeStyle='#0F2A43'; g.lineWidth=1;
       for (const t of [pier,L-pier]){
         g.beginPath(); g.moveTo(x1+ux*t-uy*3,y1+uy*t+ux*3);
         g.lineTo(x1+ux*t+uy*3,y1+uy*t-ux*3); g.stroke();
@@ -2535,7 +2536,7 @@ function drawBigPlan(){
       g.globalAlpha=1;
       if (seld){
         const mx=(x1+x2)/2,my=(y1+y2)/2;
-        g.fillStyle='#0071e3';
+        g.fillStyle='#1E6FD9';
         g.beginPath(); g.arc(mx,my,4.5,0,7); g.fill();
       }
     }
@@ -2564,7 +2565,7 @@ function drawBigPlan(){
     if (state.mCut){
       const [a1,b1]=P(state.mCut.p1[0],state.mCut.p1[1]);
       const [a2,b2]=P(state.mCut.p2[0],state.mCut.p2[1]);
-      g.strokeStyle='#0071e3'; g.lineWidth=4; g.lineCap='round';
+      g.strokeStyle='#1E6FD9'; g.lineWidth=4; g.lineCap='round';
       g.beginPath(); g.moveTo(a1,b1); g.lineTo(a2,b2); g.stroke(); g.lineCap='butt';
     }
   }
@@ -2587,45 +2588,45 @@ function drawBigPlan(){
     const [bx,by]=P(o.x0,o.y0), [bx2,by2]=P(o.x1,o.y1);
     const bw=bx2-bx, bh=by2-by;
     if (r.type==='stairs' && bw>16 && bh>16){
-      const vert=bh>bw; g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+      const vert=bh>bw; g.strokeStyle='#0F2A43'; g.lineWidth=1;
       for(let i=1;i<9;i++){const t=i/9; g.beginPath();
         if(vert){g.moveTo(bx+4,by+bh*t);g.lineTo(bx+bw-4,by+bh*t);}
         else{g.moveTo(bx+bw*t,by+4);g.lineTo(bx+bw*t,by+bh-4);} g.stroke();}
     }
     if (r.type==='elevator' && bw>14 && bh>14){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+      g.strokeStyle='#0F2A43'; g.lineWidth=1;
       g.beginPath(); g.moveTo(bx+4,by+4); g.lineTo(bx2-4,by2-4);
       g.moveTo(bx2-4,by+4); g.lineTo(bx+4,by2-4); g.stroke();
     }
     if (o.ar < 150) continue;
     const tx=ox+(o.cx/o.n)*k, ty=oy+(o.cy/o.n)*k;
-    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     g.fillText(r.name, tx, ty-13);
-    g.font='400 9.5px -apple-system,Inter,sans-serif'; g.fillStyle='#6e6e73';
+    g.font='400 9.5px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     g.fillText(fmt(o.ar)+' sq ft', tx, ty-1);
     const wft=Math.round(o.x1-o.x0), dft=Math.round(o.y1-o.y0);
-    g.fillStyle='#a1a1a6'; g.fillText(`${wft}' \u00d7 ${dft}'`, tx, ty+11);
+    g.fillStyle='#8FA3B8'; g.fillText(`${wft}' \u00d7 ${dft}'`, tx, ty+11);
   }
   // title and scale
   g.textAlign='left'; g.textBaseline='alphabetic';
-  g.font='600 13px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+  g.font='600 13px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
   g.fillText(`Level ${lvl+1}`, 18, size-26);
-  g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+  g.font='400 10px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
   g.fillText(`${USE_LABEL[pg.floorUse[lvl]]||pg.floorUse[lvl]} \u00b7 ${state.cfg.bay} ft structural grid \u00b7 1 bay = ${fmt(state.cfg.bay*state.cfg.bay)} sq ft`, 18, size-12);
   const nx2=size-34, ny2=34;
   g.save(); g.translate(nx2,ny2); g.rotate(-(vg.angle||0));
-  g.strokeStyle='#1d1d1f'; g.lineWidth=1.2;
+  g.strokeStyle='#0F2A43'; g.lineWidth=1.2;
   g.beginPath(); g.moveTo(0,13); g.lineTo(0,-13);
   g.moveTo(-5,-5); g.lineTo(0,-13); g.lineTo(5,-5); g.stroke();
-  g.font='600 9px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+  g.font='600 9px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
   g.textAlign='center'; g.textBaseline='middle'; g.fillText('N',0,22);
   g.restore();
   g.textAlign='left'; g.textBaseline='alphabetic';
   const sl=50*k, sx=size-20-sl, sy=size-20;
-  g.strokeStyle='#a1a1a6'; g.lineWidth=1;
+  g.strokeStyle='#8FA3B8'; g.lineWidth=1;
   g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx+sl,sy);
   g.moveTo(sx,sy-4); g.lineTo(sx,sy+4); g.moveTo(sx+sl,sy-4); g.lineTo(sx+sl,sy+4); g.stroke();
-  g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#a1a1a6';
+  g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#8FA3B8';
   g.textAlign='center'; g.fillText('50 ft', sx+sl/2, sy-8);
 }
 
@@ -2879,12 +2880,14 @@ function paintRoomList(){
     $('mRooms').innerHTML = [...by.values()]
       .sort((a,b)=>b.area-a.area)
       .map(e=>`<div class="mrow">
-        <i style="background:${USE_COL[e.use]||'#c7c7cc'}"></i>
+        <i style="background:${USE_COL[e.use]||'#C3D0DD'}"></i>
         <span>${e.n>1?e.n+' \u00d7 ':''}${e.label}</span>
         <b>${fmt(Math.round(e.area))}</b></div>`).join('')
       + `<p class="sub" style="margin-top:10px">Units are laid out by frontage
-         along the corridor. The wall tools act on the old bay grid and are
-         being rebuilt for this plan \u2014 the drawing is read-only for now.</p>`;
+         along the corridor. Click a demising wall to select it, drag to move
+         it, or press Delete to merge the two units either side. Every edit is
+         checked and undone if it would strand a unit off the corridor, and a
+         lift or stair cannot be merged away.</p>`;
     return;
   }
 
@@ -3403,12 +3406,12 @@ function paintSite(){
     g.drawImage(im.el, ix, iy, im.wft*v.k, hft*v.k);
     g.restore();
     if (state.tool==='img'){
-      g.strokeStyle='rgba(0,113,227,.8)'; g.lineWidth=1.5; g.setLineDash([6,4]);
+      g.strokeStyle='rgba(30,111,217,.8)'; g.lineWidth=1.5; g.setLineDash([6,4]);
       g.strokeRect(ix,iy,im.wft*v.k,hft*v.k); g.setLineDash([]);
     }
   }
   const f0=toFt(v,0,0), f1=toFt(v,w,h);
-  for (const [step,col] of [[10,'#f3f3f5'],[50,'#e5e5ea']]){
+  for (const [step,col] of [[10,'#F3F7FC'],[50,'#DCE6F1']]){
     g.strokeStyle=col; g.lineWidth=1; g.beginPath();
     for(let x=Math.floor(f0.x/step)*step;x<f1.x;x+=step){const[px]=toPx(v,{x,y:0});g.moveTo(px+.5,0);g.lineTo(px+.5,h);}
     for(let y=Math.floor(f0.y/step)*step;y<f1.y;y+=step){const[,py]=toPx(v,{x:0,y});g.moveTo(0,py+.5);g.lineTo(w,py+.5);}
@@ -3422,21 +3425,21 @@ function paintSite(){
   pts.forEach((p,i)=>{const[x,y]=toPx(v,p); i?g.lineTo(x,y):g.moveTo(x,y);});
   if(!state.drawing) g.closePath();
   if(!state.drawing){ g.fillStyle='rgba(255,255,255,.92)'; g.fill(); }
-  g.strokeStyle='#1d1d1f'; g.lineWidth=2; g.stroke();
+  g.strokeStyle='#0F2A43'; g.lineWidth=2; g.stroke();
 
   if (state.drawing){
     if (state.cursor && pts.length){
       const [lx,ly]=toPx(v,pts[pts.length-1]);
-      g.setLineDash([5,4]); g.strokeStyle='#0071e3'; g.lineWidth=1.5;
+      g.setLineDash([5,4]); g.strokeStyle='#1E6FD9'; g.lineWidth=1.5;
       g.beginPath(); g.moveTo(lx,ly); g.lineTo(state.cursor[0],state.cursor[1]); g.stroke();
       g.setLineDash([]);
       const ft=toFt(v,state.cursor[0],state.cursor[1]);
       const run=Math.hypot(ft.x-pts[pts.length-1].x, ft.y-pts[pts.length-1].y);
-      g.fillStyle='#0071e3'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
+      g.fillStyle='#1E6FD9'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
       g.textAlign='left'; g.textBaseline='bottom';
       g.fillText(`${Math.round(run)} ft`, state.cursor[0]+10, state.cursor[1]-6);
     }
-    g.fillStyle='#0071e3';
+    g.fillStyle='#1E6FD9';
     pts.forEach((p,i)=>{const[x,y]=toPx(v,p);g.beginPath();g.arc(x,y,i===0?6:4,0,7);g.fill();});
     scaleBar(g,v,w,h); return;
   }
@@ -3444,7 +3447,7 @@ function paintSite(){
   const c=readCfg();
   const vg=buildVoxelGraph({pts:state.site.pts,setbacks:state.site.setbacks},
     {stories:1,upperSetback:0,bay:c.bay,gridAngle:c.gridAngle});
-  g.fillStyle='rgba(0,113,227,.12)'; g.strokeStyle='rgba(0,113,227,.32)'; g.lineWidth=1;
+  g.fillStyle='rgba(30,111,217,.12)'; g.strokeStyle='rgba(30,111,217,.32)'; g.lineWidth=1;
   const W2 = p => vg.angle ? rotPt(p, vg.angle, vg.pivot) : p;
   for (const cell of vg.voxels){
     const c4=[{x:cell.x,y:cell.y},{x:cell.x+cell.w,y:cell.y},
@@ -3463,8 +3466,8 @@ function paintSite(){
       const ix=e.nx*sb*v.k, iy=e.ny*sb*v.k;
       g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by);
       g.lineTo(bx+ix,by+iy); g.lineTo(ax+ix,ay+iy); g.closePath();
-      g.fillStyle = hot?'rgba(194,112,58,.26)':'rgba(194,112,58,.1)'; g.fill();
-      g.strokeStyle = hot?'#c2703a':'rgba(194,112,58,.42)';
+      g.fillStyle = hot?'rgba(140,194,255,.34)':'rgba(207,229,255,.38)'; g.fill();
+      g.strokeStyle = hot?'#C27C1E':'rgba(140,194,255,.55)';
       g.setLineDash([5,4]); g.lineWidth=hot?1.8:1;
       g.beginPath(); g.moveTo(ax+ix,ay+iy); g.lineTo(bx+ix,by+iy); g.stroke(); g.setLineDash([]);
     }
@@ -3477,11 +3480,11 @@ function paintSite(){
       g.fillStyle='rgba(255,255,255,.75)';
       g.fillRect(lx-tw/2-5, ly-9, tw+10, 18);
     }
-    g.fillStyle = hot?'#c2703a':'#6e6e73';
+    g.fillStyle = hot?'#C27C1E':'#617A94';
     g.fillText(txt, lx, ly);
     if (sb>0){
       const [cx,cy]=toPx(v,{x:mid.x+e.nx*sb/2,y:mid.y+e.ny*sb/2});
-      g.fillStyle = hot?'#c2703a':'#b0854f'; g.fillText(`${sb}'`,cx,cy);
+      g.fillStyle = hot?'#C27C1E':'#B7700E'; g.fillText(`${sb}'`,cx,cy);
     }
   });
   if (state.tool==='add'){
@@ -3489,7 +3492,7 @@ function paintSite(){
     edges.forEach(e=>{
       const [x,y]=toPx(v,{x:(e.a.x+e.b.x)/2,y:(e.a.y+e.b.y)/2});
       g.beginPath(); g.arc(x,y,5,0,7);
-      g.fillStyle='#fff'; g.fill(); g.strokeStyle='#0071e3'; g.stroke();
+      g.fillStyle='#fff'; g.fill(); g.strokeStyle='#1E6FD9'; g.stroke();
     });
   }
   // entrances: the bays that can take one while the tool is live, then the doors
@@ -3506,9 +3509,9 @@ function paintSite(){
       const cell = state.vg.voxels[en.id];
       if (!cell) continue;
       trace(poly(cell));
-      g.fillStyle = en.manual ? 'rgba(122,46,30,.34)' : 'rgba(122,46,30,.20)';
+      g.fillStyle = en.manual ? 'rgba(22,89,180,.34)' : 'rgba(22,89,180,.20)';
       g.fill();
-      g.strokeStyle='#7a2e1e'; g.lineWidth=2.4;
+      g.strokeStyle='#1659B4'; g.lineWidth=2.4;
       if (!en.manual) g.setLineDash([5,3]);
       g.stroke(); g.setLineDash([]);
       if (en.face >= 0){
@@ -3519,11 +3522,11 @@ function paintSite(){
         else if (dy===1) { p1={x:cell.x,y:cell.y+cell.d}; p2={x:cell.x+cell.w,y:cell.y+cell.d}; }
         else             { p1={x:cell.x,y:cell.y};        p2={x:cell.x+cell.w,y:cell.y}; }
         const [ax,ay]=toPx(v,fromGrid(p1)), [bx,by]=toPx(v,fromGrid(p2));
-        g.strokeStyle='#7a2e1e'; g.lineWidth=5; g.lineCap='round';
+        g.strokeStyle='#1659B4'; g.lineWidth=5; g.lineCap='round';
         g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.stroke(); g.lineCap='butt';
       }
       const [cxp,cyp]=toPx(v, fromGrid({x:cell.x+cell.w/2, y:cell.y+cell.d/2}));
-      g.fillStyle='#7a2e1e';
+      g.fillStyle='#1659B4';
       g.fillText(en.manual ? 'ENTRY' : 'ENTRY · auto', cxp, cyp);
     }
   }
@@ -3538,7 +3541,7 @@ function paintSite(){
       const nx = e2 ? e2.nx : 0, ny = e2 ? e2.ny : 1;
       const tx = -ny, ty = nx;                       // along the boundary
       const half = Math.max(9, 11 * v.k);
-      g.strokeStyle = '#7a2e1e';
+      g.strokeStyle = '#1659B4';
       g.lineWidth = solid ? 5 : 3;
       g.setLineDash(solid ? [] : [5,4]);
       g.lineCap = 'round';
@@ -3559,7 +3562,7 @@ function paintSite(){
     }
     if (state.tool === 'entrance' && !ents.length){
       g.font='500 11px var(--mono),monospace';
-      g.fillStyle='#7a2e1e'; g.textAlign='center';
+      g.fillStyle='#1659B4'; g.textAlign='center';
       const c = centroid(state.site.pts), [cx,cy] = toPx(v, c);
       g.fillText('Click the boundary to place an entrance', cx, cy);
     }
@@ -3568,29 +3571,29 @@ function paintSite(){
   pts.forEach(p=>{
     const [x,y]=toPx(v,p);
     g.beginPath(); g.arc(x,y,6.5,0,7); g.fillStyle='#fff'; g.fill();
-    g.lineWidth=2.5; g.strokeStyle = state.tool==='del' ? '#c2703a' : '#1d1d1f'; g.stroke();
+    g.lineWidth=2.5; g.strokeStyle = state.tool==='del' ? '#C27C1E' : '#0F2A43'; g.stroke();
   });
   if (state.drag){
     const p=pts[state.drag.i], [x,y]=toPx(v,p);
-    g.fillStyle='#1d1d1f'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
+    g.fillStyle='#0F2A43'; g.font='600 11px ui-monospace,SFMono-Regular,monospace';
     g.fillText(`${Math.round(p.x)}, ${Math.round(p.y)}`, x, y-17);
   }
   if (state.cal && state.cal.b){
     const [ax,ay]=toPx(v,state.cal.a), [bx,by]=toPx(v,state.cal.b);
-    g.strokeStyle='#0071e3'; g.lineWidth=2.5;
+    g.strokeStyle='#1E6FD9'; g.lineWidth=2.5;
     g.beginPath(); g.moveTo(ax,ay); g.lineTo(bx,by); g.stroke();
     for (const [qx,qy] of [[ax,ay],[bx,by]]){
-      g.beginPath(); g.arc(qx,qy,4.5,0,7); g.fillStyle='#0071e3'; g.fill();
+      g.beginPath(); g.arc(qx,qy,4.5,0,7); g.fillStyle='#1E6FD9'; g.fill();
     }
   }
   scaleBar(g,v,w,h);
 }
 function scaleBar(g,v,w,h){
   const len=50*v.k, x=w-len-26, y=h-30;
-  g.strokeStyle='#a1a1a6'; g.lineWidth=1.5;
+  g.strokeStyle='#8FA3B8'; g.lineWidth=1.5;
   g.beginPath(); g.moveTo(x,y); g.lineTo(x+len,y);
   g.moveTo(x,y-4); g.lineTo(x,y+4); g.moveTo(x+len,y-4); g.lineTo(x+len,y+4); g.stroke();
-  g.fillStyle='#a1a1a6'; g.font='500 11px -apple-system,Inter,sans-serif';
+  g.fillStyle='#8FA3B8'; g.font='500 11px -apple-system,Inter,sans-serif';
   g.textAlign='center'; g.textBaseline='top'; g.fillText('50 ft',x+len/2,y+6);
 }
 function hit(px,py){
@@ -4441,7 +4444,7 @@ function drawPlan(cv, lvl, size, detail){
   /* --- plot line and mandatory open space --- */
   normalizeSite();
   g.save();
-  g.setLineDash([6,4]); g.lineWidth = 1; g.strokeStyle = '#c7c7cc';
+  g.setLineDash([6,4]); g.lineWidth = 1; g.strokeStyle = '#C3D0DD';
   g.beginPath();
   state.site.pts.forEach((p,i)=>{ const [x,y]=P(p.x,p.y); i?g.lineTo(x,y):g.moveTo(x,y); });
   g.closePath(); g.stroke(); g.restore();
@@ -4449,7 +4452,7 @@ function drawPlan(cv, lvl, size, detail){
   /* --- structural grid --- */
   if (detail){
     g.save();
-    g.strokeStyle = '#e8e8ed'; g.lineWidth = 1; g.setLineDash([9,3,2,3]);
+    g.strokeStyle = '#E9F0F7'; g.lineWidth = 1; g.setLineDash([9,3,2,3]);
     const y0 = oy + vg.minY*k - 22, y1 = oy + vg.maxY*k + 22;
     const x0 = ox + vg.minX*k - 22, x1 = ox + vg.maxX*k + 22;
     vg.cx.forEach(x=>{ const [px]=P(x,0); g.beginPath(); g.moveTo(px,y0); g.lineTo(px,y1); g.stroke(); });
@@ -4459,12 +4462,12 @@ function drawPlan(cv, lvl, size, detail){
     g.textAlign='center'; g.textBaseline='middle';
     vg.cx.forEach((x,i)=>{ const [px]=P(x,0);
       g.beginPath(); g.arc(px,y0,7,0,7); g.fillStyle='#fff'; g.fill();
-      g.strokeStyle='#c7c7cc'; g.lineWidth=1; g.stroke();
-      g.fillStyle='#86868b'; g.fillText(GRIDLET(i),px,y0); });
+      g.strokeStyle='#C3D0DD'; g.lineWidth=1; g.stroke();
+      g.fillStyle='#617A94'; g.fillText(GRIDLET(i),px,y0); });
     vg.cy.forEach((y,i)=>{ const [,py]=P(0,y);
       g.beginPath(); g.arc(x0,py,7,0,7); g.fillStyle='#fff'; g.fill();
-      g.strokeStyle='#c7c7cc'; g.lineWidth=1; g.stroke();
-      g.fillStyle='#86868b'; g.fillText(String(i+1),x0,py); });
+      g.strokeStyle='#C3D0DD'; g.lineWidth=1; g.stroke();
+      g.fillStyle='#617A94'; g.fillText(String(i+1),x0,py); });
     g.restore();
   }
 
@@ -4509,7 +4512,7 @@ function drawPlan(cv, lvl, size, detail){
   g.lineCap = 'butt';
   for (const [p1,p2,a] of ext){
     const [x1,y1]=P(p1[0],p1[1]), [x2,y2]=P(p2[0],p2[1]);
-    g.strokeStyle='#1d1d1f'; g.lineWidth=wExt;
+    g.strokeStyle='#0F2A43'; g.lineWidth=wExt;
     g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
     if (!detail) continue;
     const r = room(a);
@@ -4522,9 +4525,9 @@ function drawPlan(cv, lvl, size, detail){
     const gx1=x1+ux*pier, gy1=y1+uy*pier, gx2=x2-ux*pier, gy2=y2-uy*pier;
     g.strokeStyle='#fff'; g.lineWidth=wExt;
     g.beginPath(); g.moveTo(gx1,gy1); g.lineTo(gx2,gy2); g.stroke();
-    g.strokeStyle='#5a8fb8'; g.lineWidth=1.2;
+    g.strokeStyle='#2F7AE5'; g.lineWidth=1.2;
     g.beginPath(); g.moveTo(gx1,gy1); g.lineTo(gx2,gy2); g.stroke();
-    g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+    g.strokeStyle='#0F2A43'; g.lineWidth=1;
     for (const [px,py] of [[gx1,gy1],[gx2,gy2]]){
       g.beginPath(); g.moveTo(px-uy*wExt/2, py+ux*wExt/2);
       g.lineTo(px+uy*wExt/2, py-ux*wExt/2); g.stroke();
@@ -4541,13 +4544,13 @@ function drawPlan(cv, lvl, size, detail){
     const wantDoor = detail && ra && rb &&
       (ra.type==='corridor') !== (rb.type==='corridor') && !doorDone.has(pairKey);
     if (!wantDoor){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=wPart;
+      g.strokeStyle='#0F2A43'; g.lineWidth=wPart;
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
       continue;
     }
     const L = Math.hypot(x2-x1,y2-y1), dw = Math.min(L*0.55, 3.2*k);
     if (L < dw + 6){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=wPart;
+      g.strokeStyle='#0F2A43'; g.lineWidth=wPart;
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
       continue;
     }
@@ -4555,13 +4558,13 @@ function drawPlan(cv, lvl, size, detail){
     const ux=(x2-x1)/L, uy=(y2-y1)/L;
     const mx=(x1+x2)/2, my=(y1+y2)/2;
     const j1x=mx-ux*dw/2, j1y=my-uy*dw/2, j2x=mx+ux*dw/2, j2y=my+uy*dw/2;
-    g.strokeStyle='#1d1d1f'; g.lineWidth=wPart;
+    g.strokeStyle='#0F2A43'; g.lineWidth=wPart;
     g.beginPath(); g.moveTo(x1,y1); g.lineTo(j1x,j1y);
     g.moveTo(j2x,j2y); g.lineTo(x2,y2); g.stroke();
     // swing into whichever side is not the corridor
     const into = (ra.type==='corridor') ? 1 : -1;
     const nx=-uy*into, ny=ux*into;
-    g.strokeStyle='#8e8e93'; g.lineWidth=1;
+    g.strokeStyle='#8FA3B8'; g.lineWidth=1;
     g.beginPath(); g.moveTo(j1x,j1y); g.lineTo(j1x+nx*dw, j1y+ny*dw); g.stroke();
     g.beginPath();
     g.arc(j1x, j1y, dw, Math.atan2(ny,nx), Math.atan2(uy,ux), into>0);
@@ -4585,7 +4588,7 @@ function drawPlan(cv, lvl, size, detail){
     const bw = bx2-bx, bh = by2-by;
     if (detail && r.type==='stairs' && bw>14 && bh>14){
       const vert = bh>bw, n = 8;
-      g.strokeStyle='#1d1d1f'; g.lineWidth=.9;
+      g.strokeStyle='#0F2A43'; g.lineWidth=.9;
       for (let i=1;i<n;i++){
         const t=i/n;
         g.beginPath();
@@ -4598,10 +4601,10 @@ function drawPlan(cv, lvl, size, detail){
         g.moveTo(bx+bw/2-3,by+10); g.lineTo(bx+bw/2,by+5); g.lineTo(bx+bw/2+3,by+10); }
       else { g.moveTo(bx+5,by+bh/2); g.lineTo(bx+bw-5,by+bh/2);
         g.moveTo(bx+bw-10,by+bh/2-3); g.lineTo(bx+bw-5,by+bh/2); g.lineTo(bx+bw-10,by+bh/2+3); }
-      g.strokeStyle='#1d1d1f'; g.lineWidth=1.1; g.stroke();
+      g.strokeStyle='#0F2A43'; g.lineWidth=1.1; g.stroke();
     }
     if (detail && r.type==='elevator' && bw>12 && bh>12){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=.9;
+      g.strokeStyle='#0F2A43'; g.lineWidth=.9;
       g.beginPath(); g.moveTo(bx+3,by+3); g.lineTo(bx2-3,by2-3);
       g.moveTo(bx2-3,by+3); g.lineTo(bx+3,by2-3); g.stroke();
     }
@@ -4612,12 +4615,12 @@ function drawPlan(cv, lvl, size, detail){
     g.textAlign='center'; g.textBaseline='middle';
     if (detail){
       g.font='600 9px -apple-system,Inter,sans-serif';
-      g.fillStyle='#1d1d1f'; g.fillText(label, tx, ty-5);
+      g.fillStyle='#0F2A43'; g.fillText(label, tx, ty-5);
       g.font='400 8px -apple-system,Inter,sans-serif';
-      g.fillStyle='#6e6e73'; g.fillText(fmt(o.a)+' sq ft', tx, ty+5);
+      g.fillStyle='#617A94'; g.fillText(fmt(o.a)+' sq ft', tx, ty+5);
     } else {
       g.font='600 10px -apple-system,Inter,sans-serif';
-      g.fillStyle = r.type==='stairs' ? '#1d1d1f' : '#3a3a3c';
+      g.fillStyle = r.type==='stairs' ? '#0F2A43' : '#2B4763';
       g.fillText(label, tx, ty);
     }
   }
@@ -4641,7 +4644,7 @@ function drawPlan(cv, lvl, size, detail){
     const openW=Math.min(L*0.8, 16*k);
     const j1=[mx-ux*openW/2, my-uy*openW/2], j2=[mx+ux*openW/2, my+uy*openW/2];
     // steps down to grade
-    g.strokeStyle='#b9b9c0'; g.lineWidth=1;
+    g.strokeStyle='#C3D0DD'; g.lineWidth=1;
     for (let i=1;i<=3;i++){
       const off=i*1.6;
       g.beginPath();
@@ -4652,27 +4655,27 @@ function drawPlan(cv, lvl, size, detail){
     // reopen the wall
     g.strokeStyle='#fff'; g.lineWidth=wExt+1.5;
     g.beginPath(); g.moveTo(j1[0],j1[1]); g.lineTo(j2[0],j2[1]); g.stroke();
-    g.strokeStyle='#1d1d1f'; g.lineWidth=1.2;
+    g.strokeStyle='#0F2A43'; g.lineWidth=1.2;
     g.beginPath(); g.moveTo(x1,y1); g.lineTo(j1[0],j1[1]);
     g.moveTo(j2[0],j2[1]); g.lineTo(x2,y2); g.stroke();
     // revolving drum with four blades
     const r=Math.min(openW*0.3, 4*k);
     g.beginPath(); g.arc(mx,my,r,0,7);
-    g.fillStyle='#fff'; g.fill(); g.strokeStyle='#1d1d1f'; g.lineWidth=1.3; g.stroke();
+    g.fillStyle='#fff'; g.fill(); g.strokeStyle='#0F2A43'; g.lineWidth=1.3; g.stroke();
     g.beginPath();
     for (let i=0;i<4;i++){
       const th=Math.atan2(uy,ux)+i*Math.PI/2+Math.PI/4;
       g.moveTo(mx,my); g.lineTo(mx+Math.cos(th)*r, my+Math.sin(th)*r);
     }
-    g.lineWidth=1; g.strokeStyle='#3a3a3c'; g.stroke();
+    g.lineWidth=1; g.strokeStyle='#2B4763'; g.stroke();
     // a hinged leaf either side
     for (const s of [-1,1]){
       const hx=mx+ux*(r+openW*0.18)*s, hy=my+uy*(r+openW*0.18)*s;
       const lw=openW*0.17;
-      g.strokeStyle='#8e8e93'; g.lineWidth=1.4;
+      g.strokeStyle='#8FA3B8'; g.lineWidth=1.4;
       g.beginPath(); g.moveTo(hx,hy); g.lineTo(hx-ox2*lw/k*0.9, hy-oy2*lw/k*0.9); g.stroke();
     }
-    g.fillStyle='#7a2e1e'; g.font='600 8.5px -apple-system,Inter,sans-serif';
+    g.fillStyle='#1659B4'; g.font='600 8.5px -apple-system,Inter,sans-serif';
     g.textAlign='center'; g.textBaseline='middle';
     g.fillText('ENTRANCE', mx+ox2*7, my+oy2*7);
     }
@@ -4681,25 +4684,25 @@ function drawPlan(cv, lvl, size, detail){
   /* --- title block, north point, scale --- */
   if (detail){
     g.textAlign='left'; g.textBaseline='alphabetic';
-    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     g.fillText(`Level ${lvl+1}`, 14, size-20);
-    g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     const useName = USE_LABEL[pg.floorUse[lvl]] || pg.floorUse[lvl];
     g.fillText(`${useName} \u00b7 ${cfg.bay} ft grid`, 14, size-9);
     const nx = size-24, ny = 26;
     g.save(); g.translate(nx,ny); g.rotate(-(vg.angle||0));
-    g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+    g.strokeStyle='#0F2A43'; g.lineWidth=1;
     g.beginPath(); g.moveTo(0,11); g.lineTo(0,-11);
     g.moveTo(-4,-4); g.lineTo(0,-11); g.lineTo(4,-4); g.stroke();
-    g.font='600 8px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 8px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     g.textAlign='center'; g.textBaseline='middle'; g.fillText('N', 0, 19);
     g.restore();
     const sl = 50*k, sx = size-14-sl, sy = size-14;
-    g.strokeStyle='#86868b'; g.lineWidth=1;
+    g.strokeStyle='#617A94'; g.lineWidth=1;
     g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx+sl,sy);
     g.moveTo(sx,sy-3); g.lineTo(sx,sy+3);
     g.moveTo(sx+sl,sy-3); g.lineTo(sx+sl,sy+3); g.stroke();
-    g.font='400 8px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    g.font='400 8px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     g.textAlign='center'; g.fillText('50 ft', sx+sl/2, sy-6);
   }
 }

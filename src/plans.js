@@ -31,7 +31,7 @@ function drawPlan(cv, lvl, size, detail){
   /* --- plot line and mandatory open space --- */
   normalizeSite();
   g.save();
-  g.setLineDash([6,4]); g.lineWidth = 1; g.strokeStyle = '#c7c7cc';
+  g.setLineDash([6,4]); g.lineWidth = 1; g.strokeStyle = '#C3D0DD';
   g.beginPath();
   state.site.pts.forEach((p,i)=>{ const [x,y]=P(p.x,p.y); i?g.lineTo(x,y):g.moveTo(x,y); });
   g.closePath(); g.stroke(); g.restore();
@@ -39,7 +39,7 @@ function drawPlan(cv, lvl, size, detail){
   /* --- structural grid --- */
   if (detail){
     g.save();
-    g.strokeStyle = '#e8e8ed'; g.lineWidth = 1; g.setLineDash([9,3,2,3]);
+    g.strokeStyle = '#E9F0F7'; g.lineWidth = 1; g.setLineDash([9,3,2,3]);
     const y0 = oy + vg.minY*k - 22, y1 = oy + vg.maxY*k + 22;
     const x0 = ox + vg.minX*k - 22, x1 = ox + vg.maxX*k + 22;
     vg.cx.forEach(x=>{ const [px]=P(x,0); g.beginPath(); g.moveTo(px,y0); g.lineTo(px,y1); g.stroke(); });
@@ -49,12 +49,12 @@ function drawPlan(cv, lvl, size, detail){
     g.textAlign='center'; g.textBaseline='middle';
     vg.cx.forEach((x,i)=>{ const [px]=P(x,0);
       g.beginPath(); g.arc(px,y0,7,0,7); g.fillStyle='#fff'; g.fill();
-      g.strokeStyle='#c7c7cc'; g.lineWidth=1; g.stroke();
-      g.fillStyle='#86868b'; g.fillText(GRIDLET(i),px,y0); });
+      g.strokeStyle='#C3D0DD'; g.lineWidth=1; g.stroke();
+      g.fillStyle='#617A94'; g.fillText(GRIDLET(i),px,y0); });
     vg.cy.forEach((y,i)=>{ const [,py]=P(0,y);
       g.beginPath(); g.arc(x0,py,7,0,7); g.fillStyle='#fff'; g.fill();
-      g.strokeStyle='#c7c7cc'; g.lineWidth=1; g.stroke();
-      g.fillStyle='#86868b'; g.fillText(String(i+1),x0,py); });
+      g.strokeStyle='#C3D0DD'; g.lineWidth=1; g.stroke();
+      g.fillStyle='#617A94'; g.fillText(String(i+1),x0,py); });
     g.restore();
   }
 
@@ -99,7 +99,7 @@ function drawPlan(cv, lvl, size, detail){
   g.lineCap = 'butt';
   for (const [p1,p2,a] of ext){
     const [x1,y1]=P(p1[0],p1[1]), [x2,y2]=P(p2[0],p2[1]);
-    g.strokeStyle='#1d1d1f'; g.lineWidth=wExt;
+    g.strokeStyle='#0F2A43'; g.lineWidth=wExt;
     g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
     if (!detail) continue;
     const r = room(a);
@@ -112,9 +112,9 @@ function drawPlan(cv, lvl, size, detail){
     const gx1=x1+ux*pier, gy1=y1+uy*pier, gx2=x2-ux*pier, gy2=y2-uy*pier;
     g.strokeStyle='#fff'; g.lineWidth=wExt;
     g.beginPath(); g.moveTo(gx1,gy1); g.lineTo(gx2,gy2); g.stroke();
-    g.strokeStyle='#5a8fb8'; g.lineWidth=1.2;
+    g.strokeStyle='#2F7AE5'; g.lineWidth=1.2;
     g.beginPath(); g.moveTo(gx1,gy1); g.lineTo(gx2,gy2); g.stroke();
-    g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+    g.strokeStyle='#0F2A43'; g.lineWidth=1;
     for (const [px,py] of [[gx1,gy1],[gx2,gy2]]){
       g.beginPath(); g.moveTo(px-uy*wExt/2, py+ux*wExt/2);
       g.lineTo(px+uy*wExt/2, py-ux*wExt/2); g.stroke();
@@ -131,13 +131,13 @@ function drawPlan(cv, lvl, size, detail){
     const wantDoor = detail && ra && rb &&
       (ra.type==='corridor') !== (rb.type==='corridor') && !doorDone.has(pairKey);
     if (!wantDoor){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=wPart;
+      g.strokeStyle='#0F2A43'; g.lineWidth=wPart;
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
       continue;
     }
     const L = Math.hypot(x2-x1,y2-y1), dw = Math.min(L*0.55, 3.2*k);
     if (L < dw + 6){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=wPart;
+      g.strokeStyle='#0F2A43'; g.lineWidth=wPart;
       g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
       continue;
     }
@@ -145,13 +145,13 @@ function drawPlan(cv, lvl, size, detail){
     const ux=(x2-x1)/L, uy=(y2-y1)/L;
     const mx=(x1+x2)/2, my=(y1+y2)/2;
     const j1x=mx-ux*dw/2, j1y=my-uy*dw/2, j2x=mx+ux*dw/2, j2y=my+uy*dw/2;
-    g.strokeStyle='#1d1d1f'; g.lineWidth=wPart;
+    g.strokeStyle='#0F2A43'; g.lineWidth=wPart;
     g.beginPath(); g.moveTo(x1,y1); g.lineTo(j1x,j1y);
     g.moveTo(j2x,j2y); g.lineTo(x2,y2); g.stroke();
     // swing into whichever side is not the corridor
     const into = (ra.type==='corridor') ? 1 : -1;
     const nx=-uy*into, ny=ux*into;
-    g.strokeStyle='#8e8e93'; g.lineWidth=1;
+    g.strokeStyle='#8FA3B8'; g.lineWidth=1;
     g.beginPath(); g.moveTo(j1x,j1y); g.lineTo(j1x+nx*dw, j1y+ny*dw); g.stroke();
     g.beginPath();
     g.arc(j1x, j1y, dw, Math.atan2(ny,nx), Math.atan2(uy,ux), into>0);
@@ -175,7 +175,7 @@ function drawPlan(cv, lvl, size, detail){
     const bw = bx2-bx, bh = by2-by;
     if (detail && r.type==='stairs' && bw>14 && bh>14){
       const vert = bh>bw, n = 8;
-      g.strokeStyle='#1d1d1f'; g.lineWidth=.9;
+      g.strokeStyle='#0F2A43'; g.lineWidth=.9;
       for (let i=1;i<n;i++){
         const t=i/n;
         g.beginPath();
@@ -188,10 +188,10 @@ function drawPlan(cv, lvl, size, detail){
         g.moveTo(bx+bw/2-3,by+10); g.lineTo(bx+bw/2,by+5); g.lineTo(bx+bw/2+3,by+10); }
       else { g.moveTo(bx+5,by+bh/2); g.lineTo(bx+bw-5,by+bh/2);
         g.moveTo(bx+bw-10,by+bh/2-3); g.lineTo(bx+bw-5,by+bh/2); g.lineTo(bx+bw-10,by+bh/2+3); }
-      g.strokeStyle='#1d1d1f'; g.lineWidth=1.1; g.stroke();
+      g.strokeStyle='#0F2A43'; g.lineWidth=1.1; g.stroke();
     }
     if (detail && r.type==='elevator' && bw>12 && bh>12){
-      g.strokeStyle='#1d1d1f'; g.lineWidth=.9;
+      g.strokeStyle='#0F2A43'; g.lineWidth=.9;
       g.beginPath(); g.moveTo(bx+3,by+3); g.lineTo(bx2-3,by2-3);
       g.moveTo(bx2-3,by+3); g.lineTo(bx+3,by2-3); g.stroke();
     }
@@ -202,12 +202,12 @@ function drawPlan(cv, lvl, size, detail){
     g.textAlign='center'; g.textBaseline='middle';
     if (detail){
       g.font='600 9px -apple-system,Inter,sans-serif';
-      g.fillStyle='#1d1d1f'; g.fillText(label, tx, ty-5);
+      g.fillStyle='#0F2A43'; g.fillText(label, tx, ty-5);
       g.font='400 8px -apple-system,Inter,sans-serif';
-      g.fillStyle='#6e6e73'; g.fillText(fmt(o.a)+' sq ft', tx, ty+5);
+      g.fillStyle='#617A94'; g.fillText(fmt(o.a)+' sq ft', tx, ty+5);
     } else {
       g.font='600 10px -apple-system,Inter,sans-serif';
-      g.fillStyle = r.type==='stairs' ? '#1d1d1f' : '#3a3a3c';
+      g.fillStyle = r.type==='stairs' ? '#0F2A43' : '#2B4763';
       g.fillText(label, tx, ty);
     }
   }
@@ -231,7 +231,7 @@ function drawPlan(cv, lvl, size, detail){
     const openW=Math.min(L*0.8, 16*k);
     const j1=[mx-ux*openW/2, my-uy*openW/2], j2=[mx+ux*openW/2, my+uy*openW/2];
     // steps down to grade
-    g.strokeStyle='#b9b9c0'; g.lineWidth=1;
+    g.strokeStyle='#C3D0DD'; g.lineWidth=1;
     for (let i=1;i<=3;i++){
       const off=i*1.6;
       g.beginPath();
@@ -242,27 +242,27 @@ function drawPlan(cv, lvl, size, detail){
     // reopen the wall
     g.strokeStyle='#fff'; g.lineWidth=wExt+1.5;
     g.beginPath(); g.moveTo(j1[0],j1[1]); g.lineTo(j2[0],j2[1]); g.stroke();
-    g.strokeStyle='#1d1d1f'; g.lineWidth=1.2;
+    g.strokeStyle='#0F2A43'; g.lineWidth=1.2;
     g.beginPath(); g.moveTo(x1,y1); g.lineTo(j1[0],j1[1]);
     g.moveTo(j2[0],j2[1]); g.lineTo(x2,y2); g.stroke();
     // revolving drum with four blades
     const r=Math.min(openW*0.3, 4*k);
     g.beginPath(); g.arc(mx,my,r,0,7);
-    g.fillStyle='#fff'; g.fill(); g.strokeStyle='#1d1d1f'; g.lineWidth=1.3; g.stroke();
+    g.fillStyle='#fff'; g.fill(); g.strokeStyle='#0F2A43'; g.lineWidth=1.3; g.stroke();
     g.beginPath();
     for (let i=0;i<4;i++){
       const th=Math.atan2(uy,ux)+i*Math.PI/2+Math.PI/4;
       g.moveTo(mx,my); g.lineTo(mx+Math.cos(th)*r, my+Math.sin(th)*r);
     }
-    g.lineWidth=1; g.strokeStyle='#3a3a3c'; g.stroke();
+    g.lineWidth=1; g.strokeStyle='#2B4763'; g.stroke();
     // a hinged leaf either side
     for (const s of [-1,1]){
       const hx=mx+ux*(r+openW*0.18)*s, hy=my+uy*(r+openW*0.18)*s;
       const lw=openW*0.17;
-      g.strokeStyle='#8e8e93'; g.lineWidth=1.4;
+      g.strokeStyle='#8FA3B8'; g.lineWidth=1.4;
       g.beginPath(); g.moveTo(hx,hy); g.lineTo(hx-ox2*lw/k*0.9, hy-oy2*lw/k*0.9); g.stroke();
     }
-    g.fillStyle='#7a2e1e'; g.font='600 8.5px -apple-system,Inter,sans-serif';
+    g.fillStyle='#1659B4'; g.font='600 8.5px -apple-system,Inter,sans-serif';
     g.textAlign='center'; g.textBaseline='middle';
     g.fillText('ENTRANCE', mx+ox2*7, my+oy2*7);
     }
@@ -271,25 +271,25 @@ function drawPlan(cv, lvl, size, detail){
   /* --- title block, north point, scale --- */
   if (detail){
     g.textAlign='left'; g.textBaseline='alphabetic';
-    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 11px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     g.fillText(`Level ${lvl+1}`, 14, size-20);
-    g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    g.font='400 9px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     const useName = USE_LABEL[pg.floorUse[lvl]] || pg.floorUse[lvl];
     g.fillText(`${useName} \u00b7 ${cfg.bay} ft grid`, 14, size-9);
     const nx = size-24, ny = 26;
     g.save(); g.translate(nx,ny); g.rotate(-(vg.angle||0));
-    g.strokeStyle='#1d1d1f'; g.lineWidth=1;
+    g.strokeStyle='#0F2A43'; g.lineWidth=1;
     g.beginPath(); g.moveTo(0,11); g.lineTo(0,-11);
     g.moveTo(-4,-4); g.lineTo(0,-11); g.lineTo(4,-4); g.stroke();
-    g.font='600 8px -apple-system,Inter,sans-serif'; g.fillStyle='#1d1d1f';
+    g.font='600 8px -apple-system,Inter,sans-serif'; g.fillStyle='#0F2A43';
     g.textAlign='center'; g.textBaseline='middle'; g.fillText('N', 0, 19);
     g.restore();
     const sl = 50*k, sx = size-14-sl, sy = size-14;
-    g.strokeStyle='#86868b'; g.lineWidth=1;
+    g.strokeStyle='#617A94'; g.lineWidth=1;
     g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx+sl,sy);
     g.moveTo(sx,sy-3); g.lineTo(sx,sy+3);
     g.moveTo(sx+sl,sy-3); g.lineTo(sx+sl,sy+3); g.stroke();
-    g.font='400 8px -apple-system,Inter,sans-serif'; g.fillStyle='#86868b';
+    g.font='400 8px -apple-system,Inter,sans-serif'; g.fillStyle='#617A94';
     g.textAlign='center'; g.fillText('50 ft', sx+sl/2, sy-6);
   }
 }
