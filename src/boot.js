@@ -11,33 +11,41 @@ async function generate(animate){
   try {
   if(state.view==='site') showView('mass');
   const cfg=readCfg(); state.cfg=cfg;
-  const vg=buildVoxelGraph({pts:state.site.pts,setbacks:state.site.setbacks},cfg);
-  if(!vg.voxels.length){
+  const site={pts:state.site.pts,setbacks:state.site.setbacks};
+  const probe=buildVoxelGraph(site,{...cfg,plotInset:0});
+  if(!probe.voxels.length){
     endWork();
     state.options=[]; paintRibbon(); paintSheet();
     flag('No buildable area \u2014 setbacks consume the plot'); showView('site'); return;
   }
-  const pg=buildProgramGraph(vg,cfg);
-  state.vg=vg; state.pg=pg; state.vgStale=false;
-  state.plan=buildPlans(vg,pg,cfg);
+  /* Each option is a different scheme for the same site and allowance, not the
+     same building solved again with another seed. The full-footprint plate is
+     measured first so a scheme asking to hold the footprint back has something
+     to scale against. */
+  const ref=storeyPlate(probe,0);
+  const want=SCHEMES.slice(0,cfg.nOpts);
   const out=[];
-  for(let i=0;i<cfg.nOpts;i++){
-    $('workingTxt').textContent=`Solving option ${i+1} of ${cfg.nOpts}`;
+  for(let i=0;i<want.length;i++){
+    $('workingTxt').textContent=`Scheme ${i+1} of ${want.length} \u2014 ${want[i].name}`;
     await new Promise(r=>setTimeout(r,0));
-    const b=solve(vg,pg,{iters:cfg.iters,seed:(Date.now()%9973)+i*131});
-    b.contig=contiguity(vg,pg,b.state.assign);
-    out.push(b);
+    const o=buildScheme(cfg,site,want[i],ref,cfg.iters,(Date.now()%9973)+i*131);
+    if(o) out.push(o);
   }
-  out.sort((a,b)=>(b.ev.edgeAcc+b.ev.coreAlign*0.35)-(a.ev.edgeAcc+a.ev.coreAlign*0.35));
-  state.options=out; state.pick=0; state.edits={}; dirtyEdits(); state.mEdited=false;
-  // parking reads the area schedule, which needs the options in place first
-  state.parking=buildParking();
-  if(state.floor>=cfg.stories) state.floor=-1;
+  if(!out.length){
+    endWork();
+    state.options=[]; paintRibbon(); paintSheet();
+    flag('No scheme could be built on this plot'); showView('site'); return;
+  }
+  state.options=out; state.mEdited=false;
+  applyOption(0);
   frameCamera(); paintFloors(); paintMix(); refreshAll();
   state.reveal=animate?0:1; paint3D();
   flag('');
-  if (pg.dropped.length){
-    const n=pg.dropped.reduce((a,x)=>a+x.removed,0);
+  if (want.length>out.length){
+    const n=want.length-out.length;
+    flag(`${n} scheme${n>1?'s':''} skipped \u2014 the plot is too tight to build ${n>1?'them':'it'}`);
+  } else if (state.pg && state.pg.dropped.length){
+    const n=state.pg.dropped.reduce((a,x)=>a+x.removed,0);
     flag(`${n} room${n>1?'s':''} dropped from upper levels \u2014 not enough bays`);
   }
   } catch(err){

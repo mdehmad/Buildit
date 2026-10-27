@@ -193,13 +193,14 @@ function buildVoxelGraph(site, cfg) {
 
   const voxels = [], index = new Map();
   // how the plate shrinks as the building rises
+  // must stay in step with the copy in plateAreas -- see the note there
   const insetAt = st => {
-    const u = upperSetback || 0;
+    const u = upperSetback || 0, base = cfg.plotInset || 0;
     switch (cfg.massing) {
-      case 'extrude': return 0;
-      case 'step':    return Math.floor(st / 3) * u * 3;
-      case 'crown':   return u * st * st / Math.max(1, stories - 1);
-      default:        return u * st;
+      case 'extrude': return base;
+      case 'step':    return base + Math.floor(st / 3) * u * 3;
+      case 'crown':   return base + u * st * st / Math.max(1, stories - 1);
+      default:        return base + u * st;
     }
   };
   for (let s = 0; s < stories; s++) {
@@ -309,13 +310,19 @@ function plateAreas(site, cfg, maxStoreys) {
   acc = minY; for (const d of rowD) { cy.push(acc); acc += d; }
 
   const out = [];
+  /* plotInset holds the footprint back from the setback line for every storey.
+     It is a design choice, not a bye-law: holding it back shrinks the plate, so
+     the same FAR allowance has to go up instead of out. That is how a scheme
+     becomes a tower rather than a slab, and it is the lever the option schemes
+     pull. Both inset functions have to agree or the storey count and the voxel
+     graph are sized against different footprints. */
   const insetAt = st => {
-    const u = cfg.upperSetback || 0;
+    const u = cfg.upperSetback || 0, base = cfg.plotInset || 0;
     switch (cfg.massing) {
-      case 'extrude': return 0;
-      case 'step':    return Math.floor(st / 3) * u * 3;
-      case 'crown':   return u * st * st / Math.max(1, maxStoreys - 1);
-      default:        return u * st;
+      case 'extrude': return base;
+      case 'step':    return base + Math.floor(st / 3) * u * 3;
+      case 'crown':   return base + u * st * st / Math.max(1, maxStoreys - 1);
+      default:        return base + u * st;
     }
   };
   for (let s = 0; s < maxStoreys; s++) {

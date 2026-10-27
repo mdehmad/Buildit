@@ -69,7 +69,13 @@ function cutRun(len, depth, tA, tB, mix){
       if (b && (arB < tB.min || arB > tB.max)) continue;
       const errA = a ? Math.abs(arA - tA.target) / tA.target : 0;
       const errB = b ? Math.abs(arB - tB.target) / tB.target : 0;
-      const score = (a * errA + b * errB) / n + Math.abs(a / n - mix) * 0.25;
+      /* The mix term was weighted 0.25 against an area error that runs to
+         whole multiples of it, so the asked-for mix never moved the answer and
+         every scheme came back with the same unit split. Both counts are
+         already held inside their type's area band as a hard constraint, so
+         leaning harder on the mix only chooses between cuts that were all
+         acceptable anyway. */
+      const score = (a * errA + b * errB) / n + Math.abs(a / n - mix) * 0.6;
       if (!best || score < best.score) best = { a, b, wA, wB, score };
     }
   }
@@ -304,13 +310,18 @@ function fillSkeleton(sk, plate, tA, tB, mix, nLifts, nStair){
 --------------------------------------------------------------------------- */
 function planStorey(plate, kind, opts = {}){
   const retail = kind === 'retail';
-  const depth  = retail ? STD.shopDepth : STD.aptDepth;
+  /* Band depth front to back. A scheme may ask for shallower bands: that wins
+     daylight and cross-ventilation on both faces and costs corridor, which is
+     a real trade and one of the few that shows up in the plan rather than only
+     in the schedule. */
+  const depth  = (retail ? STD.shopDepth : STD.aptDepth) * (opts.depthScale || 1);
   const cw     = retail ? STD.corridorRetail : STD.corridor;
   const tA     = retail ? TYPES.shopL : TYPES.apt2;
   const tB     = retail ? TYPES.shopS : TYPES.apt1;
   const mix    = opts.mix    != null ? opts.mix    : 0.45;
   const nLifts = opts.lifts  != null ? opts.lifts  : 2;
   const nStair = opts.stairs != null ? opts.stairs : 2;
+  const prefer = opts.prefer || 'auto';
   const A = plate.w * plate.d;
 
   /* Normal passes first. If none of them can carry the plate, run again with
@@ -318,7 +329,7 @@ function planStorey(plate, kind, opts = {}){
      deep for a bar at its daylight limit and too shallow for a courtyard ring,
      and used to fall through both and leave the storey completely empty. An
      unusually deep unit is a defect; a floor with nothing on it is a failure. */
-  let best = null;
+  let best = null, wanted = null;
   for (const typ of ['courtyard', 'bar', 'single', 'bar!']){
     if (typ === 'bar!' && best) break;
     const sk = unitSkeleton(typ, plate, depth, cw);
@@ -331,16 +342,36 @@ function planStorey(plate, kind, opts = {}){
     const courtA= plan.court ? plan.court.w*plan.court.d / A : 0;
     const filled= (plan.rooms.reduce((a,u)=>a+u.area,0) / A) + corr + courtA;
     const areaErr = units.reduce((a,u)=>a + Math.abs(u.area-u.target)/u.target, 0) / units.length;
+    // the share of the plate that can actually be sold or let
+    const net   = units.reduce((a,u)=>a + u.area, 0) / A;
 
-    // leaving floor unbuilt is the worst outcome, then runaway circulation
+    /* Leaving floor unbuilt is the worst outcome, then runaway circulation.
+       `filled` counts the corridor and the courtyard as filled, so on its own
+       it rates a floor paved with circulation as highly as one full of flats:
+       that is how a courtyard returning 63% of the plate as lettable kept
+       beating a bar returning 74% of it. Net lettable share is what the
+       appraisal is built on, so it is scored directly. A courtyard is still
+       worth having for daylight on two sides -- it is offered as a scheme of
+       its own rather than as the silent default. */
     const score = (1 - Math.min(1, filled)) * 6
                 + Math.max(0, corr - 0.18) * 8
                 + areaErr
+                + (1 - net) * 3
                 + courtA * 0.35;             // a void is useful, but it is not lettable
     plan.typology = typ;
-    plan.metrics = { corr, filled, areaErr, courtA, score };
+    plan.metrics = { corr, filled, areaErr, courtA, net, score };
     if (!best || score < best.metrics.score) best = plan;
+    if (typ === prefer) wanted = plan;
   }
+
+  /* A scheme may ask for a typology. That is a preference, not an override: it
+     is honoured only if the plate can carry it soundly, because a courtyard
+     ring forced onto a plate too shallow for one leaves most of the floor
+     unbuilt. Below the floor set here the best-scoring typology wins instead,
+     and the scheme quietly gets the plan the plate can actually take. */
+  if (wanted && wanted !== best
+      && wanted.metrics.filled >= 0.75 && wanted.metrics.corr <= 0.28) best = wanted;
+
   return best || { rooms:[], corridor:[], court:null, core:[], typology:'none', plate };
 }
 
@@ -413,13 +444,20 @@ function storeyPlate(vg, s){
 function buildPlans(vg, pg, cfg){
   const lifts  = Math.max(1, (cfg.core && cfg.core.liftCount)  || 1);
   const stairs = Math.max(1, (cfg.core && cfg.core.stairCount) || 1);
+  /* The scheme rides on cfg so that every caller of buildPlans -- generation,
+     the plan editor, the tests -- gets the same layout for the same option
+     without each having to know the scheme exists. */
+  const sch = cfg.scheme || {};
   const out = [];
   for (let s = 0; s < vg.byStory.length; s++){
     const plate = storeyPlate(vg, s);
     if (!plate){ out.push(null); continue; }
     const use  = (pg.floorUse && pg.floorUse[s]) || 'apartment';
     const kind = RETAIL_USES.has(use) ? 'retail' : 'residential';
-    const plan = planStorey(plate, kind, { lifts, stairs });
+    const plan = planStorey(plate, kind, {
+      lifts, stairs, prefer: sch.prefer, depthScale: sch.depthScale,
+      mix: kind === 'retail' ? sch.shopMix : sch.unitMix,
+    });
     /* The planner names uses generically; the app has its own keys for colour,
        labelling and the leasable test. Translate once, here at the boundary,
        so the planner stays independent of this file. */

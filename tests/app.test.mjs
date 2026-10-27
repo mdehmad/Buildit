@@ -34,6 +34,42 @@ after(async () => { await b?.close(); });
 
 test('boots without errors', () => assert.deepEqual(e, []));
 
+/* Generation used to run the annealer five times with five seeds and call the
+   results five options. Once space planning moved off the bay grid the seeds
+   stopped changing anything that gets drawn, so all five came back as the same
+   building and the only number that differed was a score nothing read. This
+   fails if that ever becomes true again. */
+test('each option is a different building', async () => {
+  const r = await p.evaluate(() => {
+    const plans = [], stats = [];
+    for (let i = 0; i < state.options.length; i++){
+      applyOption(i);
+      stats.push(schemeStats(state.options[i]));
+      plans.push(JSON.stringify((state.plan || []).filter(Boolean).map(
+        q => q.rooms.map(m => [m.x|0, m.y|0, m.w|0, m.d|0, m.label]))));
+    }
+    applyOption(0);
+    return {
+      n: plans.length,
+      distinctPlans: new Set(plans).size,
+      distinctNames: new Set(stats.map(s => s.name)).size,
+      units: stats.map(s => s.units),
+      nets:  stats.map(s => Math.round(s.net)),
+      empty: stats.filter(s => !s.units).map(s => s.name),
+    };
+  });
+  assert.ok(r.n >= 2, `expected several options, got ${r.n}`);
+  assert.equal(r.distinctPlans, r.n, 'every option must lay out differently');
+  assert.equal(r.distinctNames, r.n, 'every option must name a different scheme');
+  assert.deepEqual(r.empty, [], 'no scheme may come back with nothing in it');
+  // the spread has to be worth looking at, not a rounding difference
+  const span = (a) => (Math.max(...a) - Math.min(...a)) / Math.max(...a);
+  assert.ok(span(r.units) > 0.08,
+    `unit counts ${r.units.join('/')} are too close to be distinct options`);
+  assert.ok(span(r.nets) > 0.03,
+    `lettable areas ${r.nets.join('/')} are too close to be distinct options`);
+});
+
 test('every generated storey is sound', async () => {
   const r = await p.evaluate(() => {
     const out = { levels: 0, access: 0, overlap: 0, fill: 0 };

@@ -23,6 +23,7 @@ export const SOURCES = [
   'lifesafety.js',
   'parking.js',
   'cashflow.js',
+  'schemes.js',
   'boot.js',
 ];
 

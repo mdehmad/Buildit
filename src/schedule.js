@@ -186,12 +186,25 @@ function exportCSV(){
 
 /* ================= ribbon ================= */
 function paintRibbon(){
-  $('opts').innerHTML = state.options.map((o,i)=>`
-    <button class="opt ${i===state.pick?'on':''}" data-i="${i}">
-      <div class="r">Option ${String.fromCharCode(65+i)}</div>
-      <div class="v">${o.ev.edgeAcc.toFixed(2)}</div></button>`).join('');
+  /* The ribbon used to show one score that nothing else read, which made five
+     schemes look like five shades of the same answer. It now shows what a
+     scheme costs you and what it buys: how tall it got, how big the plate is
+     and how many units came out. */
+  const st = state.options.map(schemeStats);
+  /* Most lettable area, which is what the appraisal is built on. It is not a
+     verdict on the design -- a courtyard buys daylight with floor the tool
+     cannot price -- so it is labelled for what it measures. */
+  let top = 0;
+  for (let i = 1; i < st.length; i++) if (st[i].net > st[top].net) top = i;
+  $('opts').innerHTML = st.map((s,i)=>
+    `<button class="opt ${i===state.pick?'on':''}" data-i="${i}" title="${s.note}">
+      <div class="r">${String.fromCharCode(65+i)} · ${s.name}${
+        i===top?' <span class="tag">most lettable</span>':''}</div>
+      <div class="v">${s.units} units</div>
+      <div class="o">${s.storeys} storeys · ${fmt(Math.round(s.footprint))} sq ft plate
+        · ${Math.round(s.eff*100)}% eff · ${s.typology}</div></button>`).join('');
   $('opts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
-    state.pick=+b.dataset.i; state.reveal=1; dirtyEdits(); refreshAll();
+    applyOption(+b.dataset.i); state.reveal=1; refreshAll();
   });
   $('ribbon').style.display = state.options.length ? '' : 'none';
   paintInfo(); paintCoreDemand();

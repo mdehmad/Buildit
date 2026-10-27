@@ -642,9 +642,13 @@ function openPlan(lvl){
 function mNav(){
   $('mTitle').textContent = 'Level '+(state.mLvl+1);
   $('mOpt').innerHTML = state.options.map((o,i)=>
-    `<button data-i="${i}" class="${i===state.pick?'on':''}">${i+1}</button>`).join('');
+    `<button data-i="${i}" class="${i===state.pick?'on':''}" title="${o.sch.name}"
+      >${String.fromCharCode(65+i)}</button>`).join('');
   $('mOpt').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    state.pick=+b.dataset.i; dirtyEdits(); mNav(); redrawEditor(); refreshAll();
+    applyOption(+b.dataset.i);
+    // schemes differ in storey count, so the level being edited may be gone
+    if (state.mLvl >= state.cfg.stories) state.mLvl = 0;
+    mNav(); redrawEditor(); refreshAll();
   });
 }
 function mStep(d){
