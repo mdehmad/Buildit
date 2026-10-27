@@ -1,16 +1,17 @@
 {
   // Cloudflare Workers static-asset config.
   //
-  // The app is one self-contained index.html, so there is no Worker script and
-  // no build step: Cloudflare just serves this directory. `name` has to match
-  // the Worker's name in the dashboard exactly, or the build fails.
+  // Only dist/ is served. Pointing this at the repository root uploaded the
+  // sources, the tests and node_modules along with the pages, which is far
+  // past Cloudflare's asset limits. `name` has to match the Worker's name in
+  // the dashboard exactly, or the build fails.
   //
-  // Only read when the project is deployed through Workers. Deploying through
-  // Cloudflare Pages instead ignores this file.
+  // dist/ is committed, so a deploy works whether or not Cloudflare is
+  // configured to run `npm run build` first.
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "buildit",
   "compatibility_date": "2026-10-20",
   "assets": {
-    "directory": "./"
+    "directory": "./dist"
   }
 }

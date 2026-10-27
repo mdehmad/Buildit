@@ -59,23 +59,25 @@ grid bubbles), an editable plan view, and an area schedule exportable as JSON or
 
 Two pages, no framework, no server:
 
-| File | What it is |
+| Path | What it is |
 |---|---|
-| `landing.html` | The landing page. `index.html` redirects to it. |
-| `app.html` | buildIT itself — one page, built from `src/`. |
+| `src/` | The sources. Edit these. |
+| `dist/` | What gets deployed: `app.html`, `landing.html`, and an `index.html` that redirects to the landing. |
 
-Open either in a browser. That is the whole install.
+Open `dist/landing.html` in a browser. That is the whole install.
 
 ```bash
 npm install
-npm run build     # src/ -> app.html
+npm run build     # src/ -> dist/
 npm test          # 14 checks, in a real browser
 npm run check     # both
 ```
 
-`app.html` is **generated**. Edit `src/`, not the built file: `scripts/build.mjs`
-concatenates the sources back into the page in a fixed order, and a test fails
-if the two have drifted.
+`dist/` is **generated and committed**. Edit `src/`, not the built files:
+`scripts/build.mjs` concatenates the sources into one page in a fixed order,
+and a test fails if the two have drifted. It is committed so a deploy works
+whether or not the host runs a build first — and so that only the three pages
+and their images are ever uploaded, rather than the whole repository.
 
 ### Why it is still one page of browser JavaScript
 

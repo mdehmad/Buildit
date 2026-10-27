@@ -14,7 +14,7 @@ import { chromium } from 'playwright';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const APP = 'file://' + join(dirname(fileURLToPath(import.meta.url)), '..', 'app.html');
+const APP = 'file://' + join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'app.html');
 let browser, page;
 
 before(async () => {

@@ -10,14 +10,14 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('the built app matches its sources', () => {
-  const before = readFileSync(join(root, 'app.html'), 'utf8');
+  const before = readFileSync(join(root, 'dist/app.html'), 'utf8');
   execFileSync('node', [join(root, 'scripts/build.mjs')], { cwd: root });
-  const after = readFileSync(join(root, 'app.html'), 'utf8');
+  const after = readFileSync(join(root, 'dist/app.html'), 'utf8');
   assert.equal(after, before, 'app.html is stale — run npm run build and commit the result');
 });
 
 test('nothing declares a const the boot sequence needs before it runs', () => {
-  const html = readFileSync(join(root, 'app.html'), 'utf8');
+  const html = readFileSync(join(root, 'dist/app.html'), 'utf8');
   const body = html.slice(html.lastIndexOf('<script>'), html.lastIndexOf('</script>'));
   const boot = body.lastIndexOf('/* ================= boot ================= */');
   assert.ok(boot > 0, 'the boot section should be last');

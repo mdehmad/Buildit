@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
-const APP = 'file://' + join(DIR, '..', 'app.html');
+const APP = 'file://' + join(DIR, '..', 'dist', 'app.html');
 
 async function boot(opts = {}){
   const browser = await chromium.launch();
