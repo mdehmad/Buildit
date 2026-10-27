@@ -429,16 +429,66 @@ function planFooter(g, lvl, size){
 --------------------------------------------------------------------------- */
 const RETAIL_USES = new Set(['retail','restaurant']);
 
+/* The plannable rectangle on a storey: the largest run of columns by run of
+   rows in which every bay is buildable.
+
+   This used to return the bounding box of the storey's bays, which is only
+   the same thing when the plate is a full rectangle. On an L-shaped or
+   clipped plot the box covers bays that failed the setback test, so the plan
+   was laid over ground the building is not allowed to stand on, and the area
+   schedule counted it. On the default plot it showed up as the scheme
+   reporting itself over its own FAR limit -- the top storey is cut back to
+   the slack the allowance leaves, and the box ignored the cut.
+
+   Taking the largest clear rectangle is conservative: an L-shaped plate
+   plans as the bigger of its two legs rather than as both. That under-uses
+   such a plot, which the allowance figure will show, and it is the right way
+   round -- a plan that fits is worth more than one that does not. */
 function storeyPlate(vg, s){
-  const cells = vg.byStory[s] || [];
+  const cells = (vg.byStory[s] || []).filter(id => !vg.voxels[id].dead);
   if (!cells.length) return null;
-  let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+
+  // column and row geometry, taken across the whole graph so a column missing
+  // from this storey still holds its place in the grid
+  const cols = new Map(), rows = new Map();
+  for (const v of vg.voxels){
+    if (!cols.has(v.ix)) cols.set(v.ix, { x:v.x, w:v.w });
+    if (!rows.has(v.iy)) rows.set(v.iy, { y:v.y, d:v.d });
+  }
+  const cx = [...cols.keys()].sort((a,b)=>a-b);
+  const ry = [...rows.keys()].sort((a,b)=>a-b);
+  const ci = new Map(cx.map((k,i)=>[k,i])), rj = new Map(ry.map((k,j)=>[k,j]));
+
+  const live = Array.from({ length: ry.length }, () => new Array(cx.length).fill(0));
   for (const id of cells){
     const v = vg.voxels[id];
-    x0=Math.min(x0,v.x); y0=Math.min(y0,v.y);
-    x1=Math.max(x1,v.x+v.w); y1=Math.max(y1,v.y+v.d);
+    live[rj.get(v.iy)][ci.get(v.ix)] = 1;
   }
-  return { x:x0, y:y0, w:x1-x0, d:y1-y0 };
+  // prefix sums, so "is every bay in this rectangle buildable" is O(1)
+  const P = Array.from({ length: ry.length+1 }, () => new Array(cx.length+1).fill(0));
+  for (let j=0;j<ry.length;j++) for (let i=0;i<cx.length;i++)
+    P[j+1][i+1] = live[j][i] + P[j][i+1] + P[j+1][i] - P[j][i];
+  const full = (j0,j1,i0,i1) =>
+    P[j1+1][i1+1] - P[j0][i1+1] - P[j1+1][i0] + P[j0][i0] === (j1-j0+1)*(i1-i0+1);
+
+  const wAt = i => cols.get(cx[i]).w, dAt = j => rows.get(ry[j]).d;
+  let best = null;
+  for (let i0=0;i0<cx.length;i0++){
+    for (let i1=i0;i1<cx.length;i1++){
+      let w = 0; for (let i=i0;i<=i1;i++) w += wAt(i);
+      for (let j0=0;j0<ry.length;j0++){
+        if (!live[j0][i0]) continue;
+        let d = 0;
+        for (let j1=j0;j1<ry.length;j1++){
+          d += dAt(j1);
+          if (!full(j0,j1,i0,i1)) break;
+          if (!best || w*d > best.w*best.d)
+            best = { x:cols.get(cx[i0]).x, y:rows.get(ry[j0]).y, w, d };
+        }
+      }
+    }
+  }
+  return best;
 }
 
 function buildPlans(vg, pg, cfg){

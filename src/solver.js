@@ -119,6 +119,56 @@ function killBays(voxels, index, dead) {
   }
   for (const id of dead) { voxels[id].nbrs = []; voxels[id].dead = true; }
 }
+/* Cut the top storey back to the slack the allowance actually left.
+
+   sizeBuilding takes whole storeys while they fit and then adds one more for
+   whatever is left over -- a part storey. The voxel graph went on to build
+   that last storey at full plate, so a scheme sized against a 1:4 limit came
+   out at 1:4.05 and flagged itself as over the bye-law on first load. The
+   overshoot is small, but it is the one compliance test the tool leads with,
+   and a tool that reports its own output as illegal is not usable.
+
+   The storey is cut back a whole edge line at a time -- the cheapest of its
+   four outside columns and rows -- so what is left is still a rectangle. A
+   first attempt took the loosest individual bays instead, which is tighter on
+   area but leaves an L; the planner needs a clear rectangle, so the top floor
+   came back with no corridor and no stair on it and failed its own means of
+   escape check. Losing a few hundred sq ft of allowance is the cheaper
+   mistake. If no amount of peeling gets the stack under the allowance, the
+   storey should not be there at all and is dropped. */
+function trimTopStorey(voxels, index, stories, allowed) {
+  if (!(allowed > 0)) return;
+  let total = 0;
+  for (const v of voxels) if (!v.dead) total += v.area;
+  if (total <= allowed + 1) return;
+
+  const top = stories - 1;
+  const dead = new Set();
+  const liveNow = () => voxels.filter(v => v.s === top && !v.dead && !dead.has(v.id));
+
+  while (total > allowed + 1) {
+    const live = liveNow();
+    if (!live.length) break;
+    const cols = [...new Set(live.map(v => v.ix))].sort((a,b)=>a-b);
+    const rows = [...new Set(live.map(v => v.iy))].sort((a,b)=>a-b);
+
+    const lines = [];
+    if (cols.length > 1) for (const ix of [cols[0], cols[cols.length-1]])
+      lines.push(live.filter(v => v.ix === ix));
+    if (rows.length > 1) for (const iy of [rows[0], rows[rows.length-1]])
+      lines.push(live.filter(v => v.iy === iy));
+    if (!lines.length) break;                 // down to a single bay
+
+    // cheapest line first, so the storey gives up as little as the rule needs
+    lines.sort((a,b) =>
+      a.reduce((t,v)=>t+v.area,0) - b.reduce((t,v)=>t+v.area,0));
+    for (const v of lines[0]) { dead.add(v.id); total -= v.area; }
+  }
+
+  if (total > allowed + 1) for (const v of liveNow()) { dead.add(v.id); total -= v.area; }
+  killBays(voxels, index, dead);
+}
+
 // a detached fragment of plate cannot be part of one building
 function dropIslands(voxels, index, stories) {
   const dead = new Set();
@@ -226,6 +276,7 @@ function buildVoxelGraph(site, cfg) {
     const a = index.get(`${v.s + 1},${v.ix},${v.iy}`); if (a !== undefined) v.above = a;
   }
   dropIslands(voxels, index, stories);
+  trimTopStorey(voxels, index, stories, cfg.allowed);
 
   // notched: take a corner off every other floor, which reads as a stack of
   // terraces rather than one extruded block
