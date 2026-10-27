@@ -546,6 +546,14 @@ select.fin{text-align:left}
 #btnInputs{display:none}
 @media (max-width:1180px){ #btnInputs{display:inline-flex} }
 
+/* The header readout is five figures wide and was pushing Generate options
+   off the right edge before the sidebar collapsed. It sheds the figures the
+   info panel repeats, narrowest first. */
+@media (max-width:1400px){ .readout div:nth-child(n+4){display:none} }
+@media (max-width:1240px){ .readout div:nth-child(n+3){display:none} }
+@media (max-width:1080px){ .readout{display:none} }
+@media (max-width:1180px){ .bar{gap:10px;padding:0 16px} }
+
 @media (max-width:980px){
   .frame{grid-template-columns:64px 1fr}
   .brand span,.snav button,.snav-h,.sfoot{font-size:0}
