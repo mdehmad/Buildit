@@ -7,55 +7,60 @@
 <meta name="description" content="Draw a plot, set the bye-laws, and get buildable massing, storey plans, an area schedule and a development appraisal. No account, no server.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* Same tokens as the application, so the page you land on and the tool you
+   open from it read as one product. */
 :root{
-  --ink:#111111; --graphite:#4A4A48; --steel:#8C8C86;
-  --line:#DEDCD5; --paper:#FAFAF8; --mark:#E2521D;
-  --sans:'Space Grotesk',system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+  --ink:#0F2A43; --graphite:#2B4763; --steel:#617A94;
+  --line:#DCE6F1; --line-2:#E9F0F7; --paper:#F3F7FC; --surface-2:#F8FBFE;
+  --mark:#1E6FD9; --mark-2:#1659B4;
+  --blue-soft:#E7F0FD; --blue-softer:#F2F7FE; --sky:#8CC2FF; --sky-2:#CFE5FF;
+  --shadow:0 1px 2px rgba(15,42,67,.06),0 4px 14px rgba(15,42,67,.05);
+  --sans:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --display:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
   --max:1120px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);
-  font-size:16px;line-height:1.6;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);letter-spacing:-.02em;text-wrap:balance}
 a{color:inherit}
 .wrap{max-width:var(--max);margin:0 auto;padding:0 28px}
 
-/* metadata is monospace, uppercase and small — the drawing-office convention */
-.meta{font-family:var(--mono);font-size:11px;letter-spacing:.11em;
+/* labels in the body face, numbers in the monospace — BuildMe's rule */
+.meta{font:600 12px var(--sans);letter-spacing:.09em;
   text-transform:uppercase;color:var(--steel)}
 
 /* ---- top bar ---- */
-header{position:sticky;top:0;z-index:20;background:rgba(250,250,248,.88);
-  backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+header{position:sticky;top:0;z-index:20;background:rgba(243,247,252,.92);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:14px;height:62px}
-.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px;
-  letter-spacing:-.04em;text-decoration:none}
+.logo{display:flex;align-items:center;gap:9px;font:700 21px var(--display);
+  letter-spacing:-.02em;text-decoration:none}
 .logo em{font-style:normal;color:var(--mark)}
 .datum{width:11px;height:9px;fill:var(--mark);flex:none}
 .bar nav{margin-left:auto;display:flex;align-items:center;gap:26px}
 .bar nav a{font-size:14px;color:var(--graphite);text-decoration:none}
 .bar nav a:hover{color:var(--ink)}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
-  border-radius:4px;font-size:14px;font-weight:500;text-decoration:none;
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;
+  border-radius:10px;font-size:15px;font-weight:600;text-decoration:none;
   border:1px solid transparent;cursor:pointer;transition:.15s}
 .btn-p{background:var(--mark);color:#fff}
-.btn-p:hover{background:#c9461a}
-.btn-s{border-color:var(--line);color:var(--ink);background:#fff}
-.btn-s:hover{border-color:var(--steel)}
+.btn-p:hover{background:var(--mark-2)}
+.btn-s{border-color:var(--line);color:var(--graphite);background:#fff}
+.btn-s:hover{border-color:var(--sky)}
 @media(max-width:720px){.bar nav a:not(.btn){display:none}}
 
 /* ---- hero ---- */
 .hero{padding:92px 0 64px;position:relative;overflow:hidden}
-/* a faint setting-out grid, the way a drawing sheet is laid out */
+/* the same wash BuildMe puts behind its hero */
 .hero:before{content:"";position:absolute;inset:0;z-index:-1;
-  background-image:linear-gradient(var(--line) 1px,transparent 1px),
-                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
-  background-size:72px 72px;opacity:.5;
-  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 72%)}
-h1{font-size:clamp(38px,6vw,62px);line-height:1.04;letter-spacing:-.045em;
+  background:linear-gradient(135deg,#EAF3FF 0%,var(--paper) 62%)}
+h1{font-size:clamp(38px,6vw,62px);line-height:1.06;letter-spacing:-.03em;
   font-weight:600;max-width:17ch}
 h1 em{font-style:normal;color:var(--mark)}
 .lede{font-size:clamp(17px,2.1vw,20px);color:var(--graphite);
@@ -63,27 +68,27 @@ h1 em{font-style:normal;color:var(--mark)}
 .cta{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
 .specs{display:flex;gap:34px;flex-wrap:wrap;margin-top:46px;
   padding-top:22px;border-top:1px solid var(--line)}
-.specs div b{display:block;font-size:22px;font-weight:600;letter-spacing:-.03em;
-  font-family:var(--mono)}
+.specs div b{display:block;font:600 24px var(--display);letter-spacing:-.02em}
 .specs div span{display:block;margin-top:2px}
 
 /* ---- shots ---- */
-.shot{border:1px solid var(--line);border-radius:6px;overflow:hidden;
-  background:#fff;box-shadow:0 1px 2px rgba(17,17,17,.04),0 18px 44px rgba(17,17,17,.07)}
+.shot{border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  background:#fff;box-shadow:0 1px 2px rgba(15,42,67,.06),0 18px 44px rgba(15,42,67,.09)}
 .shot img{display:block;width:100%}
 .shot-wide{margin-top:54px}
 
 /* ---- sections ---- */
 section{padding:76px 0}
 .rule{border-top:1px solid var(--line)}
-h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.035em;font-weight:600;
+h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.025em;font-weight:600;
   margin-top:10px;max-width:22ch}
 .sub{color:var(--graphite);max-width:62ch;margin-top:14px}
 
 .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));
   gap:28px;margin-top:46px}
-.feat article{border-top:2px solid var(--ink);padding-top:16px}
-.feat h3{font-size:17px;font-weight:600;letter-spacing:-.02em;margin-bottom:7px}
+.feat article{background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;box-shadow:var(--shadow)}
+.feat h3{font-size:17px;font-weight:600;margin-bottom:7px}
 .feat p{font-size:14.5px;color:var(--graphite);line-height:1.6}
 
 .split{display:grid;grid-template-columns:1fr 1.25fr;gap:52px;align-items:center;
@@ -97,24 +102,25 @@ h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-.035em;font-weight:600;
 .split ul{margin-top:16px;list-style:none}
 .split li{position:relative;padding-left:20px;font-size:14.5px;
   color:var(--graphite);margin-bottom:8px}
-.split li:before{content:"";position:absolute;left:0;top:9px;width:9px;height:1px;
-  background:var(--mark)}
+.split li:before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;
+  border-radius:50%;background:var(--sky)}
 
 /* ---- steps ---- */
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
-  gap:0;margin-top:44px;border:1px solid var(--line);border-radius:6px;
-  background:#fff;overflow:hidden}
+  gap:0;margin-top:44px;border:1px solid var(--line);border-radius:14px;
+  background:#fff;overflow:hidden;box-shadow:var(--shadow)}
 .steps div{padding:22px;border-right:1px solid var(--line)}
 .steps div:last-child{border-right:0}
 .steps b{display:block;font-size:16px;font-weight:600;letter-spacing:-.02em;margin:9px 0 6px}
 .steps p{font-size:13.5px;color:var(--graphite);line-height:1.55}
-.stepn{display:inline-grid;place-items:center;width:21px;height:21px;
-  border-radius:50%;background:var(--ink);color:var(--paper);
-  font-family:var(--mono);font-size:10px}
+.stepn{display:inline-grid;place-items:center;width:24px;height:24px;
+  border-radius:50%;background:var(--blue-soft);color:var(--mark-2);
+  font:600 12px var(--mono)}
 
 /* ---- honest note ---- */
-.note{border-left:2px solid var(--mark);background:rgba(226,82,29,.055);
-  padding:22px 26px;margin-top:40px;border-radius:0 4px 4px 0}
+.note{border-left:3px solid var(--sky);background:var(--blue-softer);
+  border:1px solid var(--sky-2);border-left-width:3px;
+  padding:22px 26px;margin-top:40px;border-radius:0 14px 14px 0}
 .note h3{font-size:16px;font-weight:600;margin-bottom:9px;letter-spacing:-.02em}
 .note p{font-size:14.5px;color:var(--graphite);max-width:70ch}
 .note p+p{margin-top:10px}
@@ -136,7 +142,7 @@ footer a{color:var(--graphite)}
   <div class="wrap bar">
     <a class="logo" href="#top">
       <svg class="datum" viewBox="0 0 12 10" aria-hidden="true"><path d="M6 10 L12 0 L0 0 Z"/></svg>
-      build<em>IT</em></a>
+      <span>build<em>IT</em></span></a>
     <nav>
       <a href="#what">What it does</a>
       <a href="#how">How it works</a>
@@ -160,9 +166,9 @@ footer a{color:var(--graphite)}
       <a class="btn btn-s" href="https://github.com/mdehmad/Buildit">View the source</a>
     </div>
     <div class="specs meta">
-      <div><b>840</b><span>plate sizes verified</span></div>
+      <div><b>6,048</b><span>plate sizes verified</span></div>
       <div><b>100%</b><span>of every floor used</span></div>
-      <div><b>2.7%</b><span>median unit area error</span></div>
+      <div><b>4.5%</b><span>median unit area error</span></div>
       <div><b>&lt;21%</b><span>circulation, always</span></div>
     </div>
     <div class="shot shot-wide">
@@ -312,7 +318,7 @@ footer a{color:var(--graphite)}
     <div>
       <a class="logo" href="#top" style="font-size:16px">
         <svg class="datum" viewBox="0 0 12 10" aria-hidden="true"><path d="M6 10 L12 0 L0 0 Z"/></svg>
-        build<em>IT</em></a>
+        <span>build<em>IT</em></span></a>
       <p style="margin-top:12px">Concept schemes for early-stage feasibility.
         Get an architect and a cost consultant before anything is committed.</p>
     </div>

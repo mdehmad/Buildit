@@ -257,12 +257,18 @@ function paintInfo(){
       <div><span>Net saleable</span><b class="num">${fmt(Math.round(s.net))}</b></div>
     </div>
 
-    <p class="lbl" style="margin:16px 0 5px">Allowance used</p>
-    <b class="num">${(s.used*100).toFixed(0)}%</b> <span class="tiny">of ${fmt(Math.round(s.allowed))} sq ft</span>
-    ${bar(s.used, over)}
-    <p class="lbl" style="margin:14px 0 5px">Efficiency</p>
-    <b class="num">${(s.eff*100).toFixed(0)}%</b> <span class="tiny">net of gross</span>
-    ${bar(s.eff)}
+    <div class="igauge">
+      <p class="lbl">Allowance used</p>
+      <div class="gv"><b class="num">${(s.used*100).toFixed(0)}%</b>
+        <span class="tiny">of ${fmt(Math.round(s.allowed))} sq ft</span></div>
+      ${bar(s.used, over)}
+    </div>
+    <div class="igauge">
+      <p class="lbl">Efficiency</p>
+      <div class="gv"><b class="num">${(s.eff*100).toFixed(0)}%</b>
+        <span class="tiny">net of gross</span></div>
+      ${bar(s.eff)}
+    </div>
 
     ${r?`<div class="icost">
       <p class="lbl">Estimated development</p>
