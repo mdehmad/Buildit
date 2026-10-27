@@ -57,10 +57,39 @@ grid bubbles), an editable plan view, and an area schedule exportable as JSON or
 
 ## Running it
 
-Download `index.html` and open it in a browser. That's the whole install.
+Two pages, no framework, no server:
 
-It pulls Three.js from a CDN for the 3D views. If that fails, or if WebGL is off, the
-3D pane says so and everything else — plot, plans, schedule, export — still works.
+| File | What it is |
+|---|---|
+| `landing.html` | The landing page. `index.html` redirects to it. |
+| `app.html` | buildIT itself — one page, built from `src/`. |
+
+Open either in a browser. That is the whole install.
+
+```bash
+npm install
+npm run build     # src/ -> app.html
+npm test          # 14 checks, in a real browser
+npm run check     # both
+```
+
+`app.html` is **generated**. Edit `src/`, not the built file: `scripts/build.mjs`
+concatenates the sources back into the page in a fixed order, and a test fails
+if the two have drifted.
+
+### Why it is still one page of browser JavaScript
+
+Because the measurements say so. Of everything the tool does, only the solver
+takes meaningful time — about 375 ms per option. Laying out every floor takes
+0.7 ms, the area schedule 0.1 ms, the appraisal 0.1 ms, the egress check 0.8 ms,
+the parking layout 0.2 ms, the cashflow 1.2 ms. A server would add more latency
+than it could ever save, and the current arrangement has real advantages worth
+keeping: it runs offline, costs nothing to host, needs no account, and no site
+or client data leaves the machine it is opened on.
+
+What needed fixing was not the language or the runtime but the shape of the
+repository: one 7,000-line file with no tests. Hence `src/`, a build step, and
+a suite that runs on every push.
 
 ## How the solver works
 

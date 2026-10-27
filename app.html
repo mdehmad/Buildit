@@ -816,6 +816,10 @@ if (typeof THREE === 'undefined') {
 }
 </script>
 <script>
+/* Voxel graph, program graph and the annealing solver
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 // Massing solver: voxel graph + program graph -> assignment
 // Region growing (contiguity by construction) + simulated annealing over seeds.
 
@@ -2153,7 +2157,9 @@ function solve(vg, pg, opts = {}) {
   return best;
 }
 
-
+/* Editing a generated plan: walls, merges, divisions
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
 
 /* ================= plan editing ================= */
 // Edits live as overrides on top of the generated plan and everything
@@ -2808,6 +2814,10 @@ function mStep(d){
   state.mLvl=l; state.mRoom=null; redrawEditor(); mNav();
 }
 
+/* Palette, application state and configuration
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 /* ================= palette ================= */
 const USE_COL = {
   corridor:'#C9C7BE', stairs:'#C8A26B', elevator:'#7E9C8B', restroom:'#B08098',
@@ -3112,6 +3122,10 @@ function paintStack(){
 }
 window.addEventListener('pointerup',()=>{ state.painting=false; });
 const fmt = n => Math.round(n).toLocaleString();
+
+/* Unit mix, the plot, and the site drawing canvas
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
 
 /* ================= unit mix ================= */
 function levelsFor(use){
@@ -3660,6 +3674,10 @@ function setTool(t){
   if (t!=='select') closeDim(false);
   paintSite();
 }
+
+/* The three.js massing and rendered views
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
 
 /* ================= three.js ================= */
 let renderer, scene, camera, groups={}, ghost, plotLine, gMass, gRender, gRoot,
@@ -4262,6 +4280,10 @@ function frameCamera(){
   orbit.r=Math.max(vg.totalW,vg.totalD,h)*2.5; orbit.ty=h*0.42;
 }
 
+/* Architectural floor plans drawn to canvas
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 /* ================= architectural plans ================= */
 const GRIDLET = i => String.fromCharCode(65+i);
 function tint(hex, a){
@@ -4583,6 +4605,10 @@ function paintPlans(){
   });
 }
 
+/* Area schedule, options ribbon and view routing
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 /* ================= inventory schedule ================= */
 function schedule(){
   const {vg,pg,cfg}=state, opt=state.options[state.pick];
@@ -4884,6 +4910,13 @@ function refreshAll(){ paintRibbon(); paint3D();
   paintPlans(); paintSheet(); paintHead(); }
 
 /* ================= views ================= */
+/* Declared beside the function that reads it. It used to sit in the boot
+   section, which worked only because nothing happened to call showView before
+   that line ran -- the same temporal-dead-zone trap that has bitten this file
+   before. */
+const VIEW_TITLE = { dash:'Dashboard', site:'Site', mass:'Massing',
+  render:'Render', plans:'Floor plans', inv:'Area schedule', feas:'Cost and feasibility' };
+
 function showView(v){
   state.view=v;
   const three = (v==='mass'||v==='render');
@@ -4923,6 +4956,10 @@ function invalidate(){
   state.vgStale = true;
   if(state.options.length) flag('Inputs changed \u2014 generate again');
 }
+
+/* Laying units out by frontage along a corridor
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
 
 /* ============ unit planner ============ */
 /* ============================================================================
@@ -5757,6 +5794,10 @@ function paintFeas(){
   });
 }
 
+/* Residual appraisal, projects and the dashboard
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 /* ============================================================================
    Projects.
 
@@ -6243,6 +6284,10 @@ function paintCoreDemand(){
   };
 }
 
+/* Occupant load, core demand and means of escape
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 /* ============================================================================
    Basements and parking.
 
@@ -6440,6 +6485,10 @@ function drawParkingPlan(cv, idx, size){
   }
 }
 
+/* Basements, parking demand and bay layout
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
 /* ============================================================================
    Programme and cashflow.
 
@@ -6531,6 +6580,10 @@ function cashflow(){
            months:N, pre, bld, done, saleStart, saleLen, ph, r,
            profit: series[series.length-1].bal };
 }
+
+/* Programme, monthly cashflow and funding
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
 
 /* ============================================================================
    Editing a plan.
@@ -6683,6 +6736,10 @@ function afterEdit(){
   invalidate3DOnly();
 }
 function invalidate3DOnly(){ try { paint3D(); } catch(_){} }
+
+/* Generation run loop and start-up
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
 
 /* ================= run ================= */
 let busy=false;
@@ -6890,8 +6947,6 @@ for(const [id,v] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
 
 /* The inputs drawer. Everything that shapes a scheme is still one click away,
    but it is no longer the first thing the tool shows you. */
-const VIEW_TITLE = { dash:'Dashboard', site:'Site', mass:'Massing',
-  render:'Render', plans:'Floor plans', inv:'Area schedule', feas:'Cost and feasibility' };
 function openPanel(on){
   $('panel').classList.toggle('open', on);
   $('scrim').classList.toggle('on', on);

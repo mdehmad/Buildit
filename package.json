@@ -1,0 +1,13 @@
+{
+  "name": "buildit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Parametric massing, floor plans and development appraisal, in the browser",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "check": "npm run build && npm test"
+  },
+  "devDependencies": { "playwright": "^1.48.0" }
+}
