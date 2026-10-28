@@ -226,7 +226,12 @@ function paintDash(){
       : `<div class="empty-note">Nothing saved yet. Build a scheme and press
           <b>Save this scheme</b> to keep it.</div>`}`;
 
-  $('dashSheet').innerHTML = head + nums + cards;
+  /* Mimar's quick answers sit at the foot of the dashboard, where someone
+     who has just arrived is most likely to have a question. */
+  $('dashSheet').innerHTML = head + nums + cards
+    + '<div class="dash-help" id="quickDash"></div>';
+  if (HELP) HELP.mountQuick($('quickDash'), 'dash',
+    { title:'Questions people ask', sub:'Tap one for Mimar\u2019s answer', n:4 });
 
   $('dashSheet').querySelectorAll('.step').forEach(el=>
     el.onclick = () => showView(el.dataset.go));

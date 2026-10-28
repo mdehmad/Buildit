@@ -16,7 +16,35 @@ async function generate(animate){
   if(!probe.voxels.length){
     endWork();
     state.options=[]; paintRibbon(); paintSheet();
-    flag('No buildable area \u2014 setbacks consume the plot'); showView('site'); return;
+    flag('No buildable area \u2014 setbacks consume the plot'); showView('site');
+    /* A bay is only buildable if all four corners clear every setback, so this
+       happens on plots that plainly still have ground on them. Saying why, and
+       offering the two things that actually fix it, beats a red strip. */
+    if(HELP) HELP.oops({
+      title:'Nothing can stand on this plot yet',
+      lead:'Every structural bay has to clear all four setback lines at once, '
+         + 'so a bay is dropped the moment one corner falls outside.',
+      reasons:[
+        {title:'The setbacks leave no whole bay',
+         text:`${cfg.bay} ft bays against the setbacks you have set.`},
+        {title:'Smaller bays may fit where these do not',
+         text:'A shorter structural span survives on a tight or narrow plot.'},
+      ],
+      fixLabel:'Two things that usually work',
+      fixes:[
+        {label:'Use smaller bays', run(){
+          const el=$('sBay'); if(!el) return;
+          el.value=Math.max(+el.min||12, (+el.value||20)-4);
+          el.dispatchEvent(new Event('input')); showView('site');
+        }},
+        {label:'Halve every setback', run(){
+          state.site.setbacks = state.site.setbacks.map(v=>Math.max(0, Math.round(v/2)));
+          paintEdgeRows(); plotNote(); resize2(); paintSite(); invalidate(); showView('site');
+        }},
+      ],
+      faqs:['nobuild','setbacks'],
+    });
+    return;
   }
   /* Each option is a different scheme for the same site and allowance, not the
      same building solved again with another seed. The full-footprint plate is
@@ -26,7 +54,12 @@ async function generate(animate){
   const want=SCHEMES.slice(0,cfg.nOpts);
   const out=[];
   for(let i=0;i<want.length;i++){
-    $('workingTxt').textContent=`Scheme ${i+1} of ${want.length} \u2014 ${want[i].name}`;
+    if(HELP){
+      const f = HELP.FAQ[Math.floor(Math.random()*HELP.FAQ.length)];
+      $('working').innerHTML = `<span class="w-mm">${HELP.mimarSVG('mood-think')}</span>`
+        + `<div><b>Scheme ${i+1} of ${want.length} \u2014 ${want[i].name}</b>`
+        + `<span class="hint">${want[i].note}</span></div>`;
+    } else $('workingTxt').textContent=`Scheme ${i+1} of ${want.length} \u2014 ${want[i].name}`;
     await new Promise(r=>setTimeout(r,0));
     const o=buildScheme(cfg,site,want[i],ref,cfg.iters,(Date.now()%9973)+i*131);
     if(o) out.push(o);
@@ -34,7 +67,17 @@ async function generate(animate){
   if(!out.length){
     endWork();
     state.options=[]; paintRibbon(); paintSheet();
-    flag('No scheme could be built on this plot'); showView('site'); return;
+    flag('No scheme could be built on this plot'); showView('site');
+    if(HELP) HELP.oops({
+      title:'The plate is buildable, but nothing plans on it',
+      lead:'There are bays standing, but no scheme could lay a corridor, a core '
+         + 'and a row of units on what is left of them.',
+      reasons:[{title:'The plate is too small or too narrow',
+        text:'A storey needs room for a band of units each side of a corridor.'}],
+      fixes:[{label:'Open the site', run(){ showView('site'); }}],
+      faqs:['nobuild','irregular'],
+    });
+    return;
   }
   state.options=out; state.mEdited=false;
   applyOption(0);
@@ -44,6 +87,11 @@ async function generate(animate){
   if (want.length>out.length){
     const n=want.length-out.length;
     flag(`${n} scheme${n>1?'s':''} skipped \u2014 the plot is too tight to build ${n>1?'them':'it'}`);
+    if(HELP) HELP.toast({ mood:'think',
+      title:`${n} scheme${n>1?'s':''} skipped`,
+      text:'One asked to hold the footprint back and could not do it without '
+         + 'losing floor area the allowance already pays for.',
+      action:{ label:'Why?', run(){ HELP.openFaq('fewopts'); } }, ms:9000 });
   } else if (state.pg && state.pg.dropped.length){
     const n=state.pg.dropped.reduce((a,x)=>a+x.removed,0);
     flag(`${n} room${n>1?'s':''} dropped from upper levels \u2014 not enough bays`);
@@ -51,6 +99,15 @@ async function generate(animate){
   } catch(err){
     console.error(err);
     flag('Something went wrong while solving \u2014 adjust an input and try again');
+    if(HELP) HELP.oops({
+      kicker:'Mimar hit a snag',
+      title:'Something went wrong while solving',
+      lead:'The scheme on screen is whatever survived. Change an input and '
+         + 'generate again; if it keeps happening, the console has the detail.',
+      reasons:[{title:String(err && err.message || err).slice(0,160)}],
+      fixes:[{label:'Back to the site', run(){ showView('site'); }}],
+      help:false,
+    });
   } finally { endWork(); }
 }
 
@@ -211,8 +268,20 @@ $('tFit').onclick=()=>{ state.fitPending=true; paintSite(); if(state.vg) frameCa
 $('tReset').onclick=()=>{ state.site=DEFAULT_PLOT(); state.drawing=false; setTool('select');
   paintEdgeRows(); plotNote(); paintSite(); invalidate(); };
 for(const [id,v] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
-  ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas']])
+  ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas'],
+  ['vwHelp','help']])
   $(id).onclick=()=>showView(v);
+
+/* The help layer builds its own links -- in Mimar's bubble, in the quick
+   answer cards, in the foot of every pop-up. They are written as anchors so
+   they still read as links without script, but this app switches views in
+   JavaScript rather than by hash, so the click is caught here instead. */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-view]');
+  if (!a) return;
+  e.preventDefault();
+  showView(a.dataset.view);
+});
 
 /* The inputs drawer. Everything that shapes a scheme is still one click away,
    but it is no longer the first thing the tool shows you. */

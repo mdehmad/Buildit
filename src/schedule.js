@@ -327,7 +327,8 @@ function refreshAll(){ paintRibbon(); paint3D();
    that line ran -- the same temporal-dead-zone trap that has bitten this file
    before. */
 const VIEW_TITLE = { dash:'Dashboard', site:'Site', mass:'Massing',
-  render:'Render', plans:'Floor plans', inv:'Area schedule', feas:'Cost and feasibility' };
+  render:'Render', plans:'Floor plans', inv:'Area schedule',
+  feas:'Cost and feasibility', help:'Help & FAQ' };
 
 function showView(v){
   state.view=v;
@@ -339,8 +340,10 @@ function showView(v){
   $('paneInv').classList.toggle('on', v==='inv');
   $('paneFeas').classList.toggle('on', v==='feas');
   $('paneDash').classList.toggle('on', v==='dash');
+  $('paneHelp').classList.toggle('on', v==='help');
   for(const [id,k] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
-    ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas']])
+    ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas'],
+    ['vwHelp','help']])
     $(id).classList.toggle('on',k===v);
   $('rail').style.display = v==='site' ? '' : 'none';
   $('floors').style.display = v==='mass' ? '' : 'none';
@@ -353,11 +356,16 @@ function showView(v){
   if(v==='inv') paintSheet();
   if(v==='feas') paintFeas();
   if(v==='dash') paintDash();
+  if(v==='help' && HELP) HELP.mountHelpPage($('helpPage'));
   const t = $('viewTitle'); if (t) t.textContent = VIEW_TITLE[v] || 'buildIT';
   const work = (v==='mass'||v==='render'||v==='plans');
   document.querySelector('.body').classList.toggle('with-info', work);
   if (work) paintInfo();
   if (v !== 'site' && typeof openPanel === 'function') openPanel(false);
+  /* Mimar follows the screen: each view gets its own greeting and its own
+     rotation of questions. The guide hides itself on the help page, where
+     the whole FAQ is already on screen and a floating copy of it is noise. */
+  if (HELP){ HELP.setScreen(v); HELP.hideGuide(v==='help'); }
 }
 function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggle('on',!!m); }
 /* Inputs have moved on from the solved grid. Anything derived from that grid --

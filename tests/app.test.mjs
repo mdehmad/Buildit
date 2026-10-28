@@ -178,3 +178,66 @@ for (const [name, opts] of [
     } finally { await s.browser.close(); }
   });
 }
+
+/* The help layer is the only part of the app that can fail quietly: if it
+   throws on load, nothing else notices and the tool simply loses its guide.
+   These check that it mounted, that every FAQ an error path points at exists,
+   and that the fixes a pop-up offers actually recover the scheme. */
+test('the help layer loads and its FAQ library is sound', async () => {
+  const r = await p.evaluate(() => {
+    const H = window.BuildITHelp;
+    if (!H) return { missing: true };
+    const ans = f => typeof f.a === 'function' ? f.a() : f.a;
+    const screens = ['dash', 'site', 'mass', 'render', 'plans', 'inv', 'feas'];
+    return {
+      n: H.FAQ.length,
+      dupIds: H.FAQ.length - new Set(H.FAQ.map(f => f.id)).size,
+      badCat: H.FAQ.filter(f => !H.CATS[f.cat]).map(f => f.id),
+      thin: H.FAQ.filter(f => !f.q || String(ans(f)).length < 80).map(f => f.id),
+      noTip: H.FAQ.filter(f => !f.tip).map(f => f.id),
+      // every screen must have at least one question of its own to rotate
+      bareScreens: screens.filter(s => !H.FAQ.some(f => f.screens.includes(s))),
+      // ids the error pop-ups reference
+      missingRefs: ['nobuild', 'setbacks', 'irregular', 'fewopts']
+        .filter(id => !H.byId[id]),
+      guideMounted: !!document.getElementById('mimar'),
+    };
+  });
+  assert.ok(!r.missing, 'window.BuildITHelp must be defined');
+  assert.ok(r.n >= 20, `expected a real FAQ library, got ${r.n} entries`);
+  assert.equal(r.dupIds, 0, 'FAQ ids must be unique');
+  assert.deepEqual(r.badCat, [], 'every FAQ must sit in a declared category');
+  assert.deepEqual(r.thin, [], 'every FAQ needs a question and a real answer');
+  assert.deepEqual(r.noTip, [], 'every FAQ needs a tip for Mimar to say');
+  assert.deepEqual(r.bareScreens, [], 'every screen needs questions of its own');
+  assert.deepEqual(r.missingRefs, [], 'error pop-ups reference FAQs that exist');
+  assert.ok(r.guideMounted, 'the guide should mount itself');
+});
+
+test('an unbuildable plot explains itself and offers a fix that works', async () => {
+  const r = await p.evaluate(async () => {
+    const keep = state.site.setbacks.slice();
+    state.site.setbacks = state.site.setbacks.map(() => 62);
+    paintEdgeRows(); resize2();
+    await generate(false);
+    const box = document.getElementById('oops');
+    const out = {
+      shown: !!box,
+      fixes: box ? [...box.querySelectorAll('[data-fix]')].length : 0,
+      faqs: box ? [...box.querySelectorAll('.oops-faq summary')].length : 0,
+    };
+    // take the setback fix and check it actually recovers
+    // the dialog closes first and runs the fix a moment later, on purpose
+    if (box) box.querySelector('[data-fix="1"]').click();
+    await new Promise(r => setTimeout(r, 400));
+    await generate(false);
+    out.recovered = state.options.length;
+    state.site.setbacks = keep; paintEdgeRows(); resize2();
+    await generate(false);
+    return out;
+  });
+  assert.ok(r.shown, 'an unbuildable plot must say why, not just flag a strip');
+  assert.ok(r.fixes >= 2, 'the pop-up should offer something to try');
+  assert.ok(r.faqs >= 1, 'the pop-up should link the questions behind it');
+  assert.ok(r.recovered > 0, 'the offered fix must actually produce a scheme');
+});

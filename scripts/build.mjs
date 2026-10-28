@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const SOURCES = [
+  'help.js',
   'solver.js',
   'plan-edit.js',
   'state.js',

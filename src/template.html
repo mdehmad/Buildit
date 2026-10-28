@@ -42,6 +42,15 @@
   --i-eye:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 5C6.5 5 2.7 9.4 1.5 12c1.2 2.6 5 7 10.5 7s9.3-4.4 10.5-7C21.3 9.4 17.5 5 12 5zm0 11a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z'/%3E%3C/svg%3E");
   --i-list:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M4 5h16v2H4zm0 6h16v2H4zm0 6h16v2H4z'/%3E%3C/svg%3E");
   --i-cash:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M2 6h20v12H2zm10 2a4 4 0 100 8 4 4 0 000-8zM5 9a2 2 0 01-2 2v2a2 2 0 012 2h14a2 2 0 012-2v-2a2 2 0 01-2-2z'/%3E%3C/svg%3E");
+  /* BuildMe's token names, aliased onto buildIT's, so stylesheets and
+     components ported from it work unchanged. */
+  --surface:var(--bg); --ink-2:var(--graphite); --muted:var(--text-3);
+  --line-2:var(--bg-3); --body:var(--sans);
+  --primary:var(--mark); --primary-2:var(--mark-2); --primary-ink:#FFFFFF;
+  --primary-soft:var(--blue-soft); --primary-softer:var(--blue-softer);
+  --good:var(--green); --good-soft:var(--green-soft);
+  --warn:var(--amber); --warn-soft:var(--amber-soft);
+  --i-help:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 100 20 10 10 0 000-20zm0 16.2a1.2 1.2 0 110-2.4 1.2 1.2 0 010 2.4zm1.8-6.1c-.7.4-.9.7-.9 1.3v.4h-1.9v-.5c0-1.4.5-2.1 1.5-2.7.8-.5 1.1-.8 1.1-1.4 0-.7-.5-1.1-1.3-1.1-.8 0-1.4.5-1.5 1.4H8.9c.1-1.9 1.4-3.1 3.4-3.1 2 0 3.3 1.1 3.3 2.8 0 1.2-.6 1.9-1.8 2.9z'/%3E%3C/svg%3E");
   --sans:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
   --display:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -54,6 +63,9 @@
   --apartment:#7C6BD6; --office:#2F7AE5; --amenity:#1C9DB3; --hotel:#B8697F;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+/* The help layer hides and shows panels with the hidden attribute, which a
+   display rule on the element itself otherwise beats. */
+[hidden]{display:none!important}
 html,body{height:100%}
 body{font-family:var(--sans);
   background:var(--bg-2);color:var(--text);font-size:14px;line-height:1.5;
@@ -285,6 +297,16 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
   background:rgba(245,245,247,.74);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   color:var(--text-2);font-size:12.5px;font-weight:500}
 .working.on{display:grid}
+/* While schemes are solving, Mimar stands in the overlay with the name of the
+   one being built and what it trades, instead of a bare "Solving" label. */
+.working .w-mm{width:74px;height:92px;flex:0 0 auto}
+.working .w-mm .mm{width:100%;height:100%}
+.working > .w-mm,.working > div{display:inline-block;vertical-align:middle}
+.working.on:has(.w-mm){display:grid;grid-auto-flow:column;gap:16px;
+  place-content:center;align-items:center}
+.working b{display:block;color:var(--text);font-size:15px;font-family:var(--display);
+  letter-spacing:-.01em;margin-bottom:3px}
+.working .hint{max-width:40ch;font-size:13px}
 .noglmsg{position:absolute;inset:0;z-index:3;display:grid;place-content:center;
   justify-items:center;gap:5px;text-align:center;padding:24px;
   background:var(--bg-2);color:var(--text-2);font-size:12.5px;line-height:1.55}
@@ -493,6 +515,7 @@ select.fin{text-align:left}
 .snav button[data-ic=eye]:before{-webkit-mask-image:var(--i-eye);mask-image:var(--i-eye)}
 .snav button[data-ic=list]:before{-webkit-mask-image:var(--i-list);mask-image:var(--i-list)}
 .snav button[data-ic=cash]:before{-webkit-mask-image:var(--i-cash);mask-image:var(--i-cash)}
+.snav button[data-ic=help]:before{-webkit-mask-image:var(--i-help);mask-image:var(--i-help)}
 .snav-h{font:600 11px var(--sans);letter-spacing:.09em;
   text-transform:uppercase;color:var(--text-3);padding:14px 10px 6px}
 .sfoot{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--line);
@@ -649,6 +672,247 @@ select.fin{text-align:left}
 .cfx{font-family:var(--mono);font-size:8.5px;fill:var(--text-3)}
 
 .mhint{font-size:13px;color:var(--text-3);margin-left:14px}
+
+/* ===================================================================
+   Help layer, ported from BuildMe: Mimar the guide, quick answers,
+   the help page, animated pop-ups and toasts.
+   =================================================================== */
+
+/* ===== Mimar (guide), quick answers, help page, pop-ups ===== */
+.mm{display:block;overflow:visible}
+.mm .mm-m,.mm .mm-sweat,.mm .mm-bulb,.mm .mm-q{display:none}
+.mm.mood-happy .mm-m-happy,.mm.mood-wave .mm-m-happy,.mm.mood-idea .mm-m-happy{display:inline}
+.mm.mood-oops .mm-m-oops,.mm.mood-oops .mm-sweat{display:inline}
+.mm.mood-think .mm-m-think,.mm.mood-think .mm-q{display:inline}
+.mm.mood-idea .mm-bulb{display:inline}
+.mm .mm-eyes,.mm .mm-arm,.mm .mm-head,.mm .mm-bob,.mm .mm-brows path,.mm .mm-sweat,.mm .mm-bulb,.mm .mm-hat,.mm .mm-pencil{transform-box:fill-box}
+.mm .mm-eyes{transform-origin:center}
+.mm .mm-arm{transform-origin:85% 70%}
+.mm .mm-head{transform-origin:50% 90%}
+.mm .mm-hat{transform-origin:50% 100%}
+.mm.mood-oops .mm-brows .b1{transform:translate(0,-2.5px) rotate(-12deg);transform-origin:center}
+.mm.mood-oops .mm-brows .b2{transform:translate(0,-2.5px) rotate(12deg);transform-origin:center}
+.mm.mood-think .mm-brows .b2{transform:translate(0,-2px) rotate(8deg);transform-origin:center}
+@media (prefers-reduced-motion:no-preference){
+  .mm .mm-bob{animation:mm-bob 2.8s ease-in-out infinite}
+  .mm .mm-eyes{animation:mm-blink 4.6s infinite}
+  .mm.mood-wave .mm-arm{animation:mm-wave 1.1s ease-in-out 3}
+  .mm.mood-idea .mm-bulb{animation:mm-glow 1.4s ease-in-out infinite;transform-origin:center}
+  .mm.mood-think .mm-pencil{animation:mm-tap .7s ease-in-out infinite;transform-origin:50% 100%}
+  .mm.mood-think .mm-q{animation:mm-float 2s ease-in-out infinite}
+  .mm.mood-oops .mm-head{animation:mm-shake .5s ease-in-out 3}
+  .mm.mood-oops .mm-hat{animation:mm-hat 1.8s ease-in-out infinite}
+  .mm.mood-oops .mm-sweat{animation:mm-sweat 1.6s ease-in infinite}
+  .mm.mood-happy .mm-head{animation:mm-nod 3.2s ease-in-out infinite}
+}
+@keyframes mm-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes mm-blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes mm-wave{0%,100%{transform:rotate(0)}30%{transform:rotate(22deg)}65%{transform:rotate(-8deg)}}
+@keyframes mm-glow{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.12);opacity:.85}}
+@keyframes mm-tap{0%,100%{transform:rotate(0)}50%{transform:rotate(-14deg)}}
+@keyframes mm-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes mm-shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+@keyframes mm-hat{0%,100%{transform:rotate(0) translateY(0)}20%{transform:rotate(-6deg) translateY(-3px)}40%{transform:rotate(3deg) translateY(0)}}
+@keyframes mm-sweat{0%{transform:translateY(-2px);opacity:0}20%{opacity:1}100%{transform:translateY(14px);opacity:0}}
+@keyframes mm-nod{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+@keyframes mm-timer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+.mimar{position:fixed;right:18px;bottom:18px;z-index:40;display:flex;align-items:flex-end;gap:8px;pointer-events:none;transition:opacity .25s,transform .25s}
+.mimar.away{opacity:0;transform:translateY(20px);pointer-events:none!important}
+.mimar > *{pointer-events:auto}
+.mm-avatar{width:86px;height:104px;border:0;background:none;padding:0;cursor:pointer;position:relative;flex:0 0 auto;filter:drop-shadow(0 6px 10px rgba(15,42,67,.18))}
+.mm-avatar svg{width:100%;height:100%}
+.mm-avatar.poke{animation:mm-poke .45s ease}
+@keyframes mm-poke{30%{transform:scale(1.1) rotate(-4deg)}60%{transform:scale(.95) rotate(3deg)}}
+.mm-badge{position:absolute;top:8px;right:4px;background:var(--bad);color:#fff;font:700 11px/18px var(--body);min-width:18px;height:18px;border-radius:9px;text-align:center;box-shadow:0 0 0 2px #fff}
+.mm-bubble{width:min(320px,calc(100vw - 130px));background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 4px 16px;box-shadow:0 14px 34px rgba(15,42,67,.16);padding:12px 14px 0;display:flex;flex-direction:column;gap:8px;margin-bottom:56px;overflow:hidden;transform-origin:100% 100%}
+.mm-bubble.pop{animation:mm-pop .35s cubic-bezier(.3,1.5,.6,1)}
+@keyframes mm-pop{from{transform:scale(.85);opacity:.4}to{transform:scale(1);opacity:1}}
+.mimar[data-state="min"] .mm-bubble{display:none}
+.mimar[data-state="min"] .mm-avatar{width:64px;height:78px}
+.mm-top{display:flex;align-items:center;gap:6px}
+.mm-top .grow{flex:1}
+.mm-kicker{font:600 11px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--primary)}
+.mm-x{border:0;background:none;width:26px;height:26px;border-radius:7px;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.mm-x:hover{background:var(--line-2)}
+.mm-x svg,.oops-x svg,.t-x svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+.mm-text{margin:0;font-size:14px;line-height:1.45;color:var(--ink);min-height:2.9em}
+.mm-answer{font-size:13px;color:var(--ink-2);background:var(--primary-softer);border:1px solid var(--sky-2);border-radius:10px;padding:9px 11px;max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:5px}
+.mm-answer .faq-tbl{font-size:12px}
+.mm-acts{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.mm-acts .btn{text-decoration:none}
+.mm-timer{height:3px;margin:4px -14px 0;background:var(--line-2)}
+.mm-timer i{display:block;height:100%;background:var(--sky);transform-origin:left}
+.mimar.paused .mm-timer i{animation-play-state:paused!important}
+@media (max-width:640px){.mimar{right:10px;bottom:10px}.mm-bubble{margin-bottom:46px}.mm-avatar{width:70px;height:86px}}
+@media print{.mimar,.toasts,.oops-back{display:none!important}}
+
+/* quick answers */
+.quick-faq{display:flex;flex-direction:column;gap:10px}
+.qf-head{display:flex;align-items:center;gap:10px}
+.qf-head > div{flex:1;min-width:0}
+.qf-face{width:40px;height:46px;flex:0 0 auto;background:var(--primary-soft);border-radius:12px;display:grid;place-items:end center;overflow:hidden}
+.qf-face svg{width:40px;height:50px;margin-bottom:-6px}
+.qf-list{display:flex;flex-direction:column;gap:6px}
+@media (prefers-reduced-motion:no-preference){.qf-list.in .faq-item{animation:qf-in .35s ease both}.qf-list.in .faq-item:nth-child(2){animation-delay:.05s}.qf-list.in .faq-item:nth-child(3){animation-delay:.1s}.qf-list.in .faq-item:nth-child(4){animation-delay:.15s}}
+@keyframes qf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.faq-item{border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.faq-item summary{cursor:pointer;list-style:none;padding:9px 34px 9px 12px;font-weight:600;font-size:13.5px;position:relative;color:var(--ink)}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"";position:absolute;right:13px;top:50%;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);transition:transform .2s}
+.faq-item[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
+.faq-item[open]{background:var(--surface);border-color:var(--sky-2)}
+.faq-a{padding:0 12px 11px;font-size:13.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px}
+.faq-item.flash{box-shadow:0 0 0 3px var(--sky-2)}
+.faq-tbl td,.faq-tbl th{padding:5px 8px}
+.page-split{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.page-split > aside{position:sticky;top:84px}
+@media (max-width:1100px){.page-split{grid-template-columns:minmax(0,1fr)}.page-split > aside{position:static}}
+.dash-help .qf-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:start}
+@media (max-width:800px){.dash-help .qf-list{grid-template-columns:minmax(0,1fr)}}
+
+/* help page */
+.help-hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);overflow:hidden;background:linear-gradient(135deg,#EAF3FF 0%,#FFFFFF 65%)}
+.help-hero-main{padding:24px 26px;display:flex;flex-direction:column;gap:12px}
+.help-hero h2{font-size:28px}
+.help-hero p{margin:0;color:var(--ink-2);max-width:56ch}
+.help-hero-art{position:relative;display:flex;align-items:flex-end;justify-content:center;padding:18px 18px 0;cursor:pointer;min-height:220px}
+.help-hero-art .mm{width:170px;height:212px}
+.help-speech{position:absolute;top:22px;right:200px;max-width:250px;background:#fff;border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:9px 12px;font-size:13px;box-shadow:var(--shadow)}
+.help-speech.pop{animation:mm-pop .35s cubic-bezier(.3,1.5,.6,1)}
+@media (max-width:800px){.help-hero{grid-template-columns:minmax(0,1fr)}.help-hero-art{min-height:170px}.help-hero-art .mm{width:120px;height:150px}.help-speech{right:auto;left:12px;max-width:60%}}
+.help-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 12px}
+.help-search:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.help-search svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;flex:0 0 auto}
+.help-search input{border:0!important;box-shadow:none!important;padding:8px 0;background:transparent}
+.faq-chips{display:flex;flex-wrap:wrap;gap:6px}
+.faq-chips button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.faq-chips button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+.help-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:1100px){.help-grid{grid-template-columns:minmax(0,1fr)}}
+.help-side{display:flex;flex-direction:column;gap:16px;position:sticky;top:84px}
+@media (max-width:1100px){.help-side{position:static}}
+.faq-list{display:flex;flex-direction:column;gap:18px}
+.faq-group{display:flex;flex-direction:column;gap:7px}
+.faq-group h3{font-size:15px;color:var(--primary-2)}
+.faq-list .faq-item{background:var(--surface)}
+.faq-list .faq-item summary{font-size:14.5px;padding:12px 38px 12px 14px}
+.faq-list .faq-a{font-size:14px;padding:0 14px 13px}
+@media (prefers-reduced-motion:no-preference){.faq-group .faq-item{animation:qf-in .3s ease both;animation-delay:calc(var(--i,0) * 30ms)}}
+.faq-list .empty-state .mm{width:70px;height:88px;margin:0 auto 6px}
+.tip-of-day p{margin:6px 0 10px;font-size:14px}
+
+/* pop-up */
+.oops-back{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(15,42,67,0);backdrop-filter:blur(0);transition:background .25s,backdrop-filter .25s;overflow:auto}
+.oops-back.in{background:rgba(15,42,67,.38);backdrop-filter:blur(3px)}
+.oops-card{position:relative;width:min(560px,100%);background:var(--surface);border-radius:20px;box-shadow:0 24px 60px rgba(15,42,67,.28);overflow:hidden;opacity:0;transform:translateY(30px) scale(.85) rotate(-2deg)}
+.oops-back.in .oops-card{animation:oops-in .6s cubic-bezier(.2,1.4,.4,1) forwards,oops-shake .45s ease .62s 1}
+.oops-back.out .oops-card{opacity:0;transform:scale(.92) translateY(10px);transition:all .22s}
+@keyframes oops-in{0%{opacity:0;transform:translateY(40px) scale(.8) rotate(-3deg)}60%{opacity:1;transform:translateY(-6px) scale(1.03) rotate(.6deg)}100%{opacity:1;transform:none}}
+@keyframes oops-shake{0%,100%{transform:none}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+.oops-back.info .oops-card{animation:oops-in .55s cubic-bezier(.2,1.4,.4,1) forwards}
+.oops-x{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:10px;border:0;background:rgba(255,255,255,.85);cursor:pointer;display:grid;place-items:center;color:var(--ink-2)}
+.oops-x:hover{background:#fff}
+.oops-stage{position:relative;height:150px;background:linear-gradient(180deg,#FDECEA 0%,#FFF6F4 100%);display:flex;align-items:flex-end;justify-content:center;gap:4px;overflow:hidden}
+.oops-back.info .oops-stage{background:linear-gradient(180deg,#E3EFFE 0%,#F4F9FF 100%);height:130px}
+.oops-house{width:230px;height:150px;margin-right:-40px}
+.oops-house .blk rect{fill:#fff;stroke:#1E6FD9;stroke-width:2}
+.oops-house .blk.odd rect{fill:#FCE9E7;stroke:var(--bad)}
+.oops-house .blk.odd text{font:700 15px var(--display);fill:var(--bad)}
+.oops-house .blk{transform-box:fill-box;transform-origin:50% 100%}
+.oops-mm{width:110px;height:136px;margin-bottom:-4px;position:relative;z-index:1}
+.oops-mm .mm{width:100%;height:100%}
+@media (prefers-reduced-motion:no-preference){
+  .oops-back.in .blk{animation:blk-drop .45s cubic-bezier(.3,1.4,.6,1) both}
+  .oops-back.in .b1{animation-delay:.15s}.oops-back.in .b2{animation-delay:.25s}.oops-back.in .b3{animation-delay:.35s}.oops-back.in .b4{animation-delay:.5s}.oops-back.in .b5{animation-delay:.6s}
+  .oops-back.in .blk.odd{animation:blk-odd 2.6s ease-in-out .8s both}
+  .oops-back.in .hook{animation:hook 2.6s ease-in-out .8s both}
+  .oops-back.in .oops-reasons li,.oops-back.in .oops-fixes .btn{animation:qf-in .4s ease both;animation-delay:calc(.45s + var(--i,0) * 90ms)}
+  .oops-back.in .oops-mm{animation:mm-in .6s cubic-bezier(.3,1.5,.6,1) .25s both}
+}
+@keyframes blk-drop{from{transform:translateY(-120px);opacity:0}to{transform:none;opacity:1}}
+@keyframes blk-odd{0%{transform:translateY(-120px);opacity:0}18%{transform:translateY(0);opacity:1}30%{transform:rotate(-6deg)}40%{transform:rotate(5deg)}50%{transform:rotate(-3deg)}62%{transform:translate(6px,-4px) rotate(10deg)}100%{transform:translate(14px,-16px) rotate(12deg);opacity:.95}}
+@keyframes hook{0%,55%{transform:none}100%{transform:translateY(10px)}}
+@keyframes mm-in{from{transform:translateY(60px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+.oops-body{padding:18px 22px 18px;display:flex;flex-direction:column;gap:12px}
+.oops-body .lab{color:var(--bad)}
+.oops-back.info .oops-body .lab{color:var(--primary)}
+.oops-body h2{font-size:21px;line-height:1.25}
+.oops-lead{margin:0;color:var(--ink-2)}
+.oops-reasons{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.oops-reasons li{display:flex;gap:10px;align-items:flex-start;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.oops-reasons .ri{width:24px;height:24px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font:700 13px var(--display);background:var(--bad-soft);color:var(--bad)}
+.oops-back.info .oops-reasons .ri{background:var(--primary-soft);color:var(--primary-2)}
+.oops-reasons b{display:block;font-size:14px}
+.oops-reasons span{font-size:13px;color:var(--muted)}
+.oops-fixes{display:flex;flex-direction:column;gap:6px}
+.oops-faq{display:flex;flex-direction:column;gap:6px}
+.oops-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line-2);padding-top:10px}
+.oops-foot .btn.link{text-decoration:underline}
+
+/* toasts */
+.toasts{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:55;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(560px,calc(100vw - 24px))}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:14px;padding:8px 10px 8px 8px;box-shadow:0 12px 30px rgba(15,42,67,.3);opacity:0;transform:translateY(24px) scale(.96);transition:opacity .28s,transform .35s cubic-bezier(.3,1.4,.6,1);width:100%}
+.toast.in{opacity:1;transform:none}
+.toast .t-face{width:40px;height:44px;background:rgba(255,255,255,.12);border-radius:10px;display:grid;place-items:end center;overflow:hidden;flex:0 0 auto}
+.toast .t-face svg{width:40px;height:50px;margin-bottom:-6px}
+.toast .t-txt{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13.5px}
+.toast .t-txt b{font-size:14px}
+.toast .t-txt span{color:#C9D9EA}
+.toast .btn.soft{background:rgba(255,255,255,.14);color:#fff}
+.toast .t-x{border:0;background:none;color:#C9D9EA;cursor:pointer;width:28px;height:28px;border-radius:8px;display:grid;place-items:center}
+.toast.bad{background:#5A1F19}
+
+
+/* ---- utilities the ported help layer expects ----
+   BuildMe's stylesheet has a handful of primitives buildIT never needed. They
+   are added here rather than rewriting the imported rules, so the next thing
+   taken from BuildMe drops in without translation. Its token names are
+   aliased on :root for the same reason. */
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:var(--shadow)}
+.card-pad{padding:18px 20px}
+.card h3{font-size:15.5px}
+.lab{font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--text-3)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tbl-wrap{overflow-x:auto}
+.empty-state{border:1.5px dashed var(--line);border-radius:12px;padding:26px;
+  text-align:center;color:var(--text-3);background:var(--surface-2)}
+.faq-tbl{border-collapse:collapse;width:100%;font-size:13px}
+.faq-tbl th{font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.07em;
+  color:var(--text-3);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+.faq-tbl td{padding:7px 8px;border-bottom:1px solid var(--bg-3);vertical-align:top}
+.trade-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.trade-list li{display:flex;flex-direction:column;gap:2px;padding-bottom:9px;
+  border-bottom:1px solid var(--bg-3)}
+.trade-list li:last-child{border-bottom:0;padding-bottom:0}
+.trade-list b{font:600 13.5px var(--display);letter-spacing:-.01em}
+.trade-list span{font-size:13px;color:var(--text-2);line-height:1.45}
+
+/* buildIT's .btn is a full-width panel button; the help layer wants BuildMe's
+   inline one with variants, so it is restyled only inside the help surfaces. */
+.mimar .btn,.oops-back .btn,.toasts .btn,.quick-faq .btn,#helpPage .btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;
+  border:1px solid var(--line);background:var(--bg);border-radius:var(--r);
+  padding:8px 14px;cursor:pointer;font-weight:600;font-size:14px;color:var(--graphite);
+  white-space:nowrap}
+.mimar .btn:hover,.oops-back .btn:hover,.quick-faq .btn:hover,#helpPage .btn:hover{
+  border-color:var(--sky);background:var(--bg)}
+.mimar .btn.primary,.oops-back .btn.primary,#helpPage .btn.primary{
+  background:var(--mark);border-color:var(--mark);color:#fff}
+.mimar .btn.primary:hover,.oops-back .btn.primary:hover{background:var(--mark-2)}
+.mimar .btn.soft,.oops-back .btn.soft,.quick-faq .btn.soft,#helpPage .btn.soft{
+  background:var(--blue-soft);border-color:transparent;color:var(--mark-2)}
+.mimar .btn.ghost,.oops-back .btn.ghost,.quick-faq .btn.ghost,#helpPage .btn.ghost{
+  background:transparent;border-color:transparent}
+.mimar .btn.link,.oops-back .btn.link,.quick-faq .btn.link,#helpPage .btn.link{
+  border:0;background:none;color:var(--mark);padding:2px 0;font-weight:500;
+  text-decoration:underline;text-underline-offset:3px}
+.mimar .btn.sm,.oops-back .btn.sm,.toasts .btn.sm,.quick-faq .btn.sm,#helpPage .btn.sm{
+  padding:5px 10px;font-size:13px}
+.mimar .btn svg,.oops-back .btn svg,.quick-faq .btn svg{width:16px;height:16px;
+  stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+
 </style>
 </head>
 <body>
@@ -668,6 +932,8 @@ select.fin{text-align:left}
       <p class="snav-h">Review</p>
       <button id="vwInv" data-ic="list">Schedule</button>
       <button id="vwFeas" data-ic="cash">Feasibility</button>
+      <p class="snav-h">Support</p>
+      <button id="vwHelp" data-ic="help">Help &amp; FAQ</button>
     </nav>
 
     <p class="sfoot">Concept schemes for early-stage feasibility. Cost rates are
@@ -811,6 +1077,8 @@ select.fin{text-align:left}
       <div class="pane" id="paneInv"><div class="sheet" id="sheet"></div></div>
       <div class="pane" id="paneFeas"><div class="sheet" id="feasSheet"></div></div>
       <div class="pane" id="paneDash"><div class="sheet" id="dashSheet"></div></div>
+      <div class="pane" id="paneHelp"><div class="sheet"><div id="helpPage"
+        style="display:flex;flex-direction:column;gap:20px"></div></div></div>
 
 
       <div class="rail" id="rail">
