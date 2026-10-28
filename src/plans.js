@@ -293,9 +293,10 @@ function drawPlan(cv, lvl, size, detail){
     g.textAlign='center'; g.fillText('50 ft', sx+sl/2, sy-6);
   }
 }
-function paintPlans(){
+function paintPlans(host){
+  const el = host || $('plansGrid');
   const {vg,cfg}=state; const opt=state.options[state.pick];
-  if(!vg||!opt){ $('plansGrid').innerHTML=''; return; }
+  if(!vg||!opt){ el.innerHTML=''; return; }
   const html=[];
   // basements read downward: B1 is the first level below grade
   const park = state.parking;
@@ -310,12 +311,12 @@ function paintPlans(){
     html.push(`<figure><canvas data-lvl="${s}"></canvas>
       <figcaption><b>Level ${s+1}</b><span>${fmt(gfa)} sq ft</span></figcaption></figure>`);
   }
-  $('plansGrid').innerHTML=html.join('');
-  $('plansGrid').querySelectorAll('figure').forEach(f=>{
+  el.innerHTML=html.join('');
+  el.querySelectorAll('figure').forEach(f=>{
     const c=f.querySelector('canvas');
     if (c.dataset.lvl !== undefined) f.onclick=()=>openPlan(+c.dataset.lvl);
   });
-  $('plansGrid').querySelectorAll('canvas').forEach(cv=>{
+  el.querySelectorAll('canvas').forEach(cv=>{
     const w=cv.parentElement.clientWidth-20;
     cv.style.width=w+'px'; cv.style.height=w+'px';
     if (cv.dataset.park !== undefined) drawParkingPlan(cv,+cv.dataset.park,w);

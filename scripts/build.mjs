@@ -21,6 +21,7 @@ export const SOURCES = [
   'schedule.js',
   'planner.js',
   'feasibility.js',
+  'pages.js',
   'lifesafety.js',
   'parking.js',
   'cashflow.js',

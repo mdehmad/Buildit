@@ -186,8 +186,7 @@ function coreNote(){
      level. <b>${c.stairCount}</b> stair${c.stairCount>1?'s':''} placed separately for escape.`;
 }
 $('go').onclick=()=>generate(true);
-$('dl').onclick=download;
-$('csv').onclick=exportCSV;
+/* the export buttons live in the Schedule tab now; wired when it paints */
 $('addUnit').onclick=()=>{
   state.mix.push({ id:'u'+(state.uid++), name:'New unit', use:state.paint,
     unitArea:800, perFloor:2 });
@@ -267,10 +266,28 @@ function plotCentre(){ const xs=state.site.pts.map(p=>p.x), ys=state.site.pts.ma
 $('tFit').onclick=()=>{ state.fitPending=true; paintSite(); if(state.vg) frameCamera(); };
 $('tReset').onclick=()=>{ state.site=DEFAULT_PLOT(); state.drawing=false; setTool('select');
   paintEdgeRows(); plotNote(); paintSite(); invalidate(); };
-for(const [id,v] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
-  ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas'],
-  ['vwHelp','help']])
+for(const [id,v] of [['vwDash','dash'],['vwNew','site'],['vwDesign','plans'],
+  ['vwProjects','projects'],['vwPlots','plots'],['vwRules','rules'],['vwHelp','help']])
   $(id).onclick=()=>showView(v);
+
+/* the workspace tabs */
+$('wsTabs').onclick = e => {
+  const b = e.target.closest('[role=tab]'); if (b) wsTab(b.dataset.tab);
+};
+/* massing or rendered, inside the 3D tab */
+$('m3dViews').onclick = e => {
+  const b = e.target.closest('[data-v]'); if (!b) return;
+  $('m3dViews').querySelectorAll('button').forEach(x =>
+    x.setAttribute('aria-selected', String(x === b)));
+  showView(b.dataset.v);
+};
+/* wizard navigation */
+document.querySelectorAll('[data-next]').forEach(b =>
+  b.onclick = () => wizStep(state.wizStep + 1));
+document.querySelectorAll('[data-back]').forEach(b =>
+  b.onclick = () => wizStep(state.wizStep - 1));
+$('btnBrief').onclick = () => showView('site');
+$('btnMore').onclick  = () => generate(true);
 
 /* The help layer builds its own links -- in Mimar's bubble, in the quick
    answer cards, in the foot of every pop-up. They are written as anchors so
@@ -283,19 +300,21 @@ document.addEventListener('click', e => {
   showView(a.dataset.view);
 });
 
-/* The inputs drawer. Everything that shapes a scheme is still one click away,
-   but it is no longer the first thing the tool shows you. */
-function openPanel(on){
-  $('panel').classList.toggle('open', on);
+/* The sidebar is a drawer on a narrow screen. */
+function openSide(on){
+  $('side').classList.toggle('open', on);
   $('scrim').classList.toggle('on', on);
 }
-$('btnInputs').onclick = () => openPanel(!$('panel').classList.contains('open'));
-$('scrim').onclick = () => openPanel(false);
+$('btnMenu').onclick = () => openSide(!$('side').classList.contains('open'));
+$('scrim').onclick = () => openSide(false);
+$('snav').addEventListener('click', () => openSide(false));
 $('cSprink').onchange = e => { state.sprinklered = e.target.checked;
   paintCoreDemand(); paintInfo(); };
-$('btnGen').onclick = () => { openPanel(false); generate(true); };
+/* One button, two jobs: start a brief from anywhere else, reopen it from the
+   workspace. Generation itself is the last step of the brief. */
+$('btnGen').onclick = () => showView('site');
 window.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && $('panel').classList.contains('open')) openPanel(false);
+  if (e.key === 'Escape' && $('side').classList.contains('open')) openSide(false);
 });
 $('dimEdit').addEventListener('keydown',e=>{
   if(e.key==='Enter'){ e.preventDefault(); closeDim(true); }

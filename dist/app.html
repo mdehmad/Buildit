@@ -50,6 +50,8 @@
   --primary-soft:var(--blue-soft); --primary-softer:var(--blue-softer);
   --good:var(--green); --good-soft:var(--green-soft);
   --warn:var(--amber); --warn-soft:var(--amber-soft);
+  --i-plus:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M11 5h2v14h-2z'/%3E%3Cpath fill='%23000' d='M5 11h14v2H5z'/%3E%3C/svg%3E");
+  --i-folder:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z'/%3E%3C/svg%3E");
   --i-help:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 100 20 10 10 0 000-20zm0 16.2a1.2 1.2 0 110-2.4 1.2 1.2 0 010 2.4zm1.8-6.1c-.7.4-.9.7-.9 1.3v.4h-1.9v-.5c0-1.4.5-2.1 1.5-2.7.8-.5 1.1-.8 1.1-1.4 0-.7-.5-1.1-1.3-1.1-.8 0-1.4.5-1.5 1.4H8.9c.1-1.9 1.4-3.1 3.4-3.1 2 0 3.3 1.1 3.3 2.8 0 1.2-.6 1.9-1.8 2.9z'/%3E%3C/svg%3E");
   --sans:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
   --display:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -158,15 +160,26 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
   background-position:calc(100% - 13px) 12px,calc(100% - 9px) 12px;
   background-size:4px 4px,4px 4px;background-repeat:no-repeat;padding-right:24px}
 
-.btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
-  padding:10px 14px;font:inherit;font-size:14px;font-weight:600;
-  background:var(--mark);color:#fff;border:1px solid var(--mark);
-  border-radius:var(--r);cursor:pointer;transition:background .16s,opacity .16s}
-.btn:hover{background:var(--mark-2)}
-.btn:disabled{opacity:.42;cursor:default}
-.btn.quiet{background:var(--blue-soft);border-color:transparent;color:var(--mark-2)}
-.btn.quiet:hover{background:var(--sky-2)}
-.btn.sm{padding:7px 11px;font-size:13px}
+/* BuildMe's button, now the button everywhere. buildIT's own was a full-width
+   bar, which is right for the foot of a drawer and wrong for a row of actions
+   in a page header -- the brief is a page now, not a drawer. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:8px 14px;font:inherit;font-size:14px;font-weight:600;
+  background:var(--bg);color:var(--graphite);border:1px solid var(--line);
+  border-radius:var(--r);cursor:pointer;white-space:nowrap;
+  transition:background .16s,border-color .16s,opacity .16s}
+.btn:hover{border-color:var(--sky)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:#fff}
+.btn.primary:hover{background:var(--mark-2);border-color:var(--mark-2)}
+.btn.soft,.btn.quiet{background:var(--blue-soft);border-color:transparent;color:var(--mark-2)}
+.btn.soft:hover,.btn.quiet:hover{background:var(--sky-2)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.link{border:0;background:none;color:var(--mark);padding:2px 0;font-weight:500;
+  text-decoration:underline;text-underline-offset:3px}
+.btn.sm{padding:5px 11px;font-size:13px}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
 .btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .foot{padding:13px 18px;border-top:1px solid var(--line);background:var(--bg)}
@@ -251,7 +264,7 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
 .pane.on{display:block}
 #gl,#site{display:block;width:100%;height:100%}
 #site{background:#fff;cursor:crosshair;touch-action:none}
-.sheet{position:absolute;inset:0;overflow-y:auto;padding:30px 36px 44px}
+.sheet{padding:0}
 
 .views{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:4;
   display:flex;gap:2px;padding:3px;border-radius:10px;
@@ -286,8 +299,11 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
 .floors button.on{background:var(--blue);color:#fff}
 .floors button.all{order:99;font-size:10px}
 
-.hint{position:absolute;left:0;right:0;bottom:64px;text-align:center;
-  font-size:11.5px;color:var(--text-3);pointer-events:none}
+/* .hint is ordinary muted text wherever BuildMe uses it. Only over a canvas
+   does it float, so the floating version is scoped to the drawing panes. */
+.hint{font-size:13px;color:var(--text-3);margin:0;line-height:1.5}
+.pane > .hint,.m3d-stage > .hint{position:absolute;left:0;right:0;bottom:14px;
+  text-align:center;font-size:11.5px;pointer-events:none}
 .flag{position:absolute;left:50%;top:92px;transform:translateX(-50%);z-index:5;
   padding:6px 14px;border-radius:980px;font-size:11.5px;font-weight:500;
   background:rgba(255,255,255,.9);backdrop-filter:blur(20px);
@@ -336,9 +352,12 @@ select.fld{cursor:pointer;-webkit-appearance:none;appearance:none;
 .chip b.warn{color:var(--amber)}
 
 /* plans grid */
-.plans{position:absolute;inset:0;overflow-y:auto;padding:86px 24px 28px;
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;align-content:start}
-.plans figure{background:#fff;border-radius:var(--r);padding:10px;box-shadow:0 0 0 1px var(--sep)}
+/* The storey thumbnails used to fill a pane that covered the window. Inside a
+   tab they are simply a grid, and have to stop claiming the whole page. */
+.plans{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;align-content:start}
+.plans figure{background:var(--bg);border-radius:var(--r);padding:10px;
+  border:1px solid var(--line);margin:0}
 .plans canvas{display:block;width:100%;border-radius:6px}
 .plans figcaption{font-size:11px;color:var(--text-2);margin-top:7px;display:flex;
   justify-content:space-between}
@@ -414,7 +433,7 @@ table.sch .off{color:var(--amber)}
 .wkey i{width:22px;border-radius:2px;flex:none}
 .mnote{margin-top:16px;font-size:11.5px;color:var(--text-3);line-height:1.55}
 .plans figure{cursor:pointer;transition:box-shadow .14s,transform .14s}
-.plans figure:hover{box-shadow:0 0 0 1px var(--blue),0 6px 18px rgba(0,0,0,.08)}
+.plans figure:hover{border-color:var(--mark);box-shadow:0 6px 18px rgba(15,42,67,.1)}
 
 @media (max-width:1040px){
   body{overflow:auto}.frame{height:auto}
@@ -485,8 +504,17 @@ select.fin{text-align:left}
    The tool used to open as a wall of controls. A persistent nav on the left
    and one clear action in the header give it an order you can pick up again
    a week later; the dense inputs live in a drawer until you ask for them. */
-.frame{display:grid;grid-template-columns:248px 1fr;grid-template-rows:1fr;height:100vh}
-.main{display:grid;grid-template-rows:auto 1fr;min-width:0;min-height:0}
+.app{display:grid;grid-template-columns:248px 1fr;grid-template-rows:1fr;height:100vh}
+.content{display:flex;flex-direction:column;min-width:0;min-height:0;overflow-y:auto}
+/* Every screen is a page now, not a pane over one canvas. */
+.page{padding:24px 28px 56px;display:flex;flex-direction:column;gap:20px;
+  max-width:1440px;width:100%}
+@media (max-width:700px){.page{padding:18px 16px 44px}}
+.menu-btn{display:none;border:1px solid var(--line);background:var(--bg);
+  border-radius:var(--r);width:38px;height:38px;cursor:pointer;place-items:center}
+.menu-btn svg{width:18px;height:18px}
+.count{margin-left:auto;font:500 11.5px var(--mono);background:var(--bg-3);
+  color:var(--text-3);border-radius:99px;padding:1px 7px}
 
 .side{background:var(--bg);border-right:1px solid var(--line);
   display:flex;flex-direction:column;padding:18px 14px;gap:4px;min-height:0}
@@ -516,6 +544,8 @@ select.fin{text-align:left}
 .snav button[data-ic=list]:before{-webkit-mask-image:var(--i-list);mask-image:var(--i-list)}
 .snav button[data-ic=cash]:before{-webkit-mask-image:var(--i-cash);mask-image:var(--i-cash)}
 .snav button[data-ic=help]:before{-webkit-mask-image:var(--i-help);mask-image:var(--i-help)}
+.snav button[data-ic=plus]:before{-webkit-mask-image:var(--i-plus);mask-image:var(--i-plus)}
+.snav button[data-ic=folder]:before{-webkit-mask-image:var(--i-folder);mask-image:var(--i-folder)}
 .snav-h{font:600 11px var(--sans);letter-spacing:.09em;
   text-transform:uppercase;color:var(--text-3);padding:14px 10px 6px}
 .sfoot{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--line);
@@ -538,90 +568,196 @@ select.fin{text-align:left}
 .hbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
 
-/* ===== inputs column =====
-   The inputs used to live in a drawer behind a button in the header. Every
-   change of mind about a setback or an FAR ratio therefore cost two clicks
-   and hid the drawing while the panel was open, which is the wrong trade for
-   the controls you touch most. They are a column of the shell now, in view
-   on every screen, and the drawer behaviour survives only below the width
-   where a third column stops fitting. */
-.body{display:grid;grid-template-columns:304px minmax(0,1fr);
-  min-height:0;position:relative}
-.panel{background:var(--bg);border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-height:0;z-index:2}
-.scrim{display:none}
+/* ===== pages, wizard and workspace =====
+   The inputs used to be a column beside a canvas. They are a brief now, filled
+   in as four cards, the way BuildMe does it -- which is also why there is no
+   drawer left to toggle. The sidebar is the only thing that still slides.  */
+.scrim{position:fixed;inset:0;z-index:15;background:rgba(15,42,67,.25);
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
 
-@media (max-width:1180px){
-  /* back to a drawer: three columns plus a drawing no longer fit */
-  .body{grid-template-columns:minmax(0,1fr)}
-  .panel{position:absolute;top:0;bottom:0;left:0;width:304px;z-index:12;
-    transform:translateX(-102%);visibility:hidden;pointer-events:none;
-    transition:transform .2s cubic-bezier(.4,0,.2,1),visibility 0s linear .2s}
-  .panel.open{transform:none;visibility:visible;pointer-events:auto;
-    box-shadow:0 0 0 1px var(--sep),18px 0 40px rgba(15,42,67,.1);
-    transition:transform .2s cubic-bezier(.4,0,.2,1),visibility 0s}
-  .scrim{display:block;position:absolute;inset:0;z-index:11;
-    background:rgba(15,42,67,.25);opacity:0;pointer-events:none;
-    transition:opacity .2s}
-  .scrim.on{opacity:1;pointer-events:auto}
-}
-/* the Inputs button is only meaningful once the column has collapsed */
-#btnInputs{display:none}
-@media (max-width:1180px){ #btnInputs{display:inline-flex} }
+/* ---- wizard ---- */
+.wiz-layout{display:grid;grid-template-columns:minmax(0,820px) 300px;gap:20px;
+  justify-content:center;align-items:start}
+.wiz-layout .wiz{margin:0}
+.wiz-aside{position:sticky;top:0}
+@media (max-width:1240px){.wiz-layout{grid-template-columns:minmax(0,1fr)}
+  .wiz-aside{position:static}}
+.wiz{max-width:820px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.wsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;list-style:none;margin:0;padding:0}
+.wsteps li{display:flex;flex-direction:column;gap:7px;font-size:12.5px;
+  color:var(--text-3);font-weight:500;cursor:pointer}
+.wsteps li::before{content:"";height:5px;border-radius:3px;background:var(--line)}
+.wsteps li.done::before,.wsteps li.on::before{background:var(--mark)}
+.wsteps li.on{color:var(--ink);font-weight:700}
+.wsteps .n{display:none}
+.card-q{padding:24px 26px;display:flex;flex-direction:column;gap:20px}
+@media (max-width:600px){.card-q{padding:18px 16px}}
+.q-head h2{font-size:24px}
+.q-head p{margin:6px 0 0;color:var(--text-3)}
+.q{display:flex;flex-direction:column;gap:10px}
+.q-title{font-weight:700;font-size:15px;font-family:var(--display)}
+.q-help{font-size:13px;color:var(--text-3);margin:-5px 0 0}
+.q-help i{font-style:normal}
+.toggle{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;
+  border:1.5px solid var(--line);border-radius:11px;cursor:pointer;background:var(--bg)}
+.toggle:has(input:checked){border-color:var(--mark);background:var(--blue-soft)}
+.toggle input{accent-color:var(--mark);width:18px;height:18px;margin-top:2px;flex:0 0 auto}
+.toggle b{display:block;font-weight:700;font-size:14px}
+.toggle span{display:block;font-size:12.5px;color:var(--text-3)}
+.wnav{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.btn.lg{padding:11px 20px;font-size:15px;border-radius:10px}
+.review{display:flex;flex-direction:column;margin:0}
+.review div{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--bg-3);align-items:baseline}
+.review dt{color:var(--text-3);font-size:13.5px}
+.review dd{margin:0;font-weight:600}
+@media (max-width:560px){.review div{grid-template-columns:1fr}}
+details.regs{border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+details.regs summary{cursor:pointer;padding:10px 12px;font-size:13.5px;font-weight:600;
+  list-style:none;display:flex;justify-content:space-between}
+details.regs summary::-webkit-details-marker{display:none}
+details.regs summary::after{content:"+";color:var(--text-3)}
+details.regs[open] summary::after{content:"\2013"}
+.regs-grid{display:flex;flex-direction:column;gap:10px;padding:0 12px 14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g label,.g4 label{display:block;font-size:11.5px;color:var(--text-3);margin-bottom:3px}
+@media (max-width:560px){.g4{grid-template-columns:repeat(2,1fr)}}
+/* the site drawing, now the first card of the brief */
+.site-stage{position:relative;height:min(56vh,480px);border:1px solid var(--line);
+  border-radius:var(--r-card);overflow:hidden;background:var(--bg-2)}
+.pane{position:absolute;inset:0;display:none}
+.pane.on{display:block}
 
-/* The header readout is five figures wide and was pushing Generate options
-   off the right edge before the sidebar collapsed. It sheds the figures the
-   info panel repeats, narrowest first. */
-@media (max-width:1400px){ .readout div:nth-child(n+4){display:none} }
-@media (max-width:1240px){ .readout div:nth-child(n+3){display:none} }
-@media (max-width:1080px){ .readout{display:none} }
-@media (max-width:1180px){ .bar{gap:10px;padding:0 16px} }
+/* ---- workspace ---- */
+.ws-head{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:14px;flex-wrap:wrap}
+.ws-title{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ws-title input{font:600 22px var(--display);border:1px solid transparent;
+  background:transparent;padding:2px 6px;margin-left:-7px;border-radius:8px;
+  width:min(520px,100%)}
+.ws-title input:hover{border-color:var(--line)}
+.ws-actions{display:flex;gap:8px;flex-wrap:wrap}
+.notes{margin:0;padding:10px 14px;border-radius:var(--r);background:var(--amber-soft);
+  color:#7a4c0a;font-size:13.5px;border:1px solid #f1d9ab}
+.ws-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+@media (max-width:1150px){.ws-grid{grid-template-columns:minmax(0,1fr)}}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 12px;overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:13px 12px 11px;cursor:pointer;
+  font-weight:600;font-size:14px;color:var(--text-3);border-bottom:2.5px solid transparent;
+  white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--mark-2);border-bottom-color:var(--mark)}
+.tabpanel{padding:16px 18px 20px;display:flex;flex-direction:column;gap:14px}
+.m3d-stage{position:relative;height:min(62vh,560px);border:1px solid var(--line);
+  border-radius:var(--r-card);overflow:hidden;background:var(--bg-2)}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toolbar input{max-width:280px}
 
-@media (max-width:980px){
-  .frame{grid-template-columns:64px 1fr}
-  .brand span,.snav button,.snav-h,.sfoot{font-size:0}
-  .brand i{display:none}
-  .snav button{justify-content:center;padding:10px 0}
-  .snav button:before{width:18px;height:18px}
-  .sfoot{display:none}
-}
+/* ---- dashboard ---- */
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:0;
+  overflow:hidden;background:linear-gradient(135deg,#EAF3FF 0%,#FFFFFF 62%)}
+@media (max-width:1000px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero-main{padding:24px 26px;display:flex;flex-direction:column;gap:14px}
+.hero h2{font-size:26px;line-height:1.2}
+.hero p{margin:0;color:var(--text-2);max-width:58ch}
+.ask{display:flex;flex-direction:column;gap:10px;background:var(--bg);
+  border:1px solid var(--line);border-radius:12px;padding:12px}
+.ask textarea{border:0;resize:vertical;min-height:58px;padding:4px;width:100%;
+  font:inherit;background:transparent;box-shadow:none!important;outline:none}
+.ask .row{justify-content:space-between}
+.examples{display:flex;flex-wrap:wrap;gap:6px}
+.examples button{border:1px solid var(--line);background:var(--bg);border-radius:99px;
+  padding:5px 11px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+.examples button:hover{border-color:var(--sky);background:var(--blue-softer)}
+.understood{border-radius:10px;background:var(--blue-softer);border:1px solid var(--sky-2);
+  padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.understood ul{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.understood li{background:var(--bg);border:1px solid var(--sky-2);border-radius:99px;
+  padding:3px 10px;font-size:12.5px}
+.understood li.def{color:var(--text-3);border-style:dashed}
+.hero-art{position:relative;min-height:220px;border-left:1px solid var(--line);
+  background:#EAF3FF;display:flex;align-items:flex-end;justify-content:center}
+@media (max-width:1000px){.hero-art{border-left:0;border-top:1px solid var(--line);max-height:220px}}
+@media (max-width:640px){.hero-art{display:none}}
+.hero-art .mm{width:70%;height:auto;margin-bottom:-4px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:13px;color:var(--text-3)}
+.kpi .v{font:600 26px/1.15 var(--display);letter-spacing:-.02em}
+.kpi .d{font-size:12.5px;color:var(--text-3)}
+.dash-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px}
+@media (max-width:1100px){.dash-grid{grid-template-columns:minmax(0,1fr)}}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:grid;grid-template-columns:86px minmax(0,1fr) 78px;gap:10px;
+  align-items:center;font-size:12.5px}
+.bar-row .nm{font-weight:600}
+.bar-row .nm small{display:block;color:var(--text-3);font-weight:400}
+.bar-track{position:relative;height:16px;background:var(--bg-3);border-radius:5px;overflow:hidden}
+.bar-track i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.bar-track i.t{background:var(--sky-2)} .bar-track i.g{background:var(--mark)}
+.bar-row .val{text-align:right;font-family:var(--mono);color:var(--text-2)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text-3);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;
+  margin-right:6px;vertical-align:-1px}
+.quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.quick button{border:1px solid var(--line);background:var(--bg);border-radius:10px;
+  padding:10px 12px;text-align:left;cursor:pointer}
+.quick button:hover{border-color:var(--sky);background:var(--blue-softer)}
+.quick b{display:block;font:600 15px var(--display)}
+.quick span{font-size:12px;color:var(--text-3)}
+
+/* ---- reference pages ---- */
+.pgrid.wide{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.plot-card .bar{height:8px;background:var(--bg-3);border-radius:99px;overflow:hidden;margin-bottom:10px}
+.plot-card .bar i{display:block;height:100%;background:var(--mark);border-radius:99px}
+dl.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:0 0 12px}
+dl.mini div{display:flex;flex-direction:column;gap:1px}
+dl.mini dt{font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)}
+dl.mini dd{margin:0;font:500 14px var(--mono)}
+dl.rules{display:flex;flex-direction:column;margin:8px 0 0}
+dl.rules div{display:grid;grid-template-columns:190px 1fr;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--bg-3)}
+dl.rules div:last-child{border-bottom:0}
+dl.rules dt{font-weight:600;font-size:13.5px}
+dl.rules dd{margin:0;color:var(--text-2);font-size:13.5px;line-height:1.55}
+@media (max-width:700px){dl.rules div{grid-template-columns:1fr;gap:3px}}
+.chk-row{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;
+  border:1px solid var(--line);border-radius:var(--r);margin-bottom:9px;background:var(--bg)}
+.chk-row.bad{background:var(--bad-soft);border-color:#F3CFCB}
+.chk-row.ok{background:var(--surface-2)}
+.chk-row b{display:block;font-size:14px}
+.chk-row span{font-size:13px;color:var(--text-2)}
+.pill{font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.05em;
+  padding:2px 8px;border-radius:99px;display:inline-block;min-width:46px;
+  text-align:center;flex:0 0 auto}
+.pill.ok{background:var(--green-soft);color:var(--green)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
 
 /* options strip and the right-hand panel */
-.ribbon{position:absolute;left:0;right:0;top:0;bottom:auto;z-index:4;
-  display:block;padding:11px 18px 13px;border-radius:0;
-  background:rgba(243,247,252,.94);backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
-  box-shadow:none}
-.ribbon .lbl{margin-bottom:8px}
-/* One row that scrolls. Letting the cards wrap turned the strip into three
-   rows covering most of the drawing behind it. */
-.opts{display:flex;gap:9px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;
-  scrollbar-width:thin}
-.opts::-webkit-scrollbar{height:7px}
-.opts::-webkit-scrollbar-thumb{background:var(--bg-4);border-radius:99px}
-/* Each option is a scheme with its own trade-off, so the button has to carry
-   enough of it to choose by: what the scheme is, what it yields, and what it
-   cost in storeys, plate and efficiency. */
-.opt{padding:9px 13px;cursor:pointer;text-align:left;font:inherit;
-  background:var(--bg);border:1px solid var(--line);border-radius:var(--r);
-  color:var(--text);transition:.13s;flex:0 0 auto;min-width:198px;
-  box-shadow:var(--shadow)}
+/* The strip used to float over the drawing, which is what made it wrap into
+   three rows and swallow the canvas. In the workspace it is simply content. */
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.opt{border:1.5px solid var(--line);background:var(--bg);border-radius:11px;
+  padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:4px;
+  text-align:left;font:inherit;color:var(--text)}
 .opt:hover{border-color:var(--sky);background:var(--blue-softer)}
-.opt.on{border-color:var(--mark);background:var(--blue-soft)}
-.opt .r{font-size:13px;font-weight:600;color:var(--graphite);line-height:1.3;
+.opt.on{border-color:var(--mark);box-shadow:0 0 0 2px var(--blue-soft);background:var(--blue-softer)}
+.opt .r{font-size:13px;font-weight:600;color:var(--text-2);line-height:1.3;
   display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .opt.on .r{color:var(--mark-2)}
-.opt .v{font:600 18px/1.2 var(--display);letter-spacing:-.02em;margin-top:3px}
-.opt .o{font-family:var(--mono);font-size:10px;color:var(--text-3);
-  margin-top:3px;line-height:1.45}
+.opt .v{font:600 18px/1.2 var(--display);letter-spacing:-.02em}
+.opt .o{font-family:var(--mono);font-size:10px;color:var(--text-3);line-height:1.45}
 .opt .tag{font:600 10px var(--sans);letter-spacing:.05em;text-transform:uppercase;
   background:var(--green-soft);color:var(--green);border-radius:99px;padding:2px 7px}
 
-.info{display:none;overflow-y:auto;background:var(--bg);
-  border-left:1px solid var(--line);padding:18px 18px 28px}
-.body.with-info{grid-template-columns:304px minmax(0,1fr) 300px}
-.body.with-info .info{display:block}
-@media (max-width:1180px){ .body.with-info{grid-template-columns:minmax(0,1fr) 300px} }
+.info{overflow:visible;background:transparent;border:0;padding:0;
+  display:flex;flex-direction:column;gap:0}
+.info > *{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.info .lbl{margin-bottom:4px}
+
 .ibox{border-radius:var(--r-card);padding:12px 14px;margin-bottom:16px;
   border:1px solid transparent}
 .ibox.ok{background:var(--green-soft);border-color:#CDEADB}
@@ -889,51 +1025,29 @@ select.fin{text-align:left}
 .trade-list b{font:600 13.5px var(--display);letter-spacing:-.01em}
 .trade-list span{font-size:13px;color:var(--text-2);line-height:1.45}
 
-/* buildIT's .btn is a full-width panel button; the help layer wants BuildMe's
-   inline one with variants, so it is restyled only inside the help surfaces. */
-.mimar .btn,.oops-back .btn,.toasts .btn,.quick-faq .btn,#helpPage .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;
-  border:1px solid var(--line);background:var(--bg);border-radius:var(--r);
-  padding:8px 14px;cursor:pointer;font-weight:600;font-size:14px;color:var(--graphite);
-  white-space:nowrap}
-.mimar .btn:hover,.oops-back .btn:hover,.quick-faq .btn:hover,#helpPage .btn:hover{
-  border-color:var(--sky);background:var(--bg)}
-.mimar .btn.primary,.oops-back .btn.primary,#helpPage .btn.primary{
-  background:var(--mark);border-color:var(--mark);color:#fff}
-.mimar .btn.primary:hover,.oops-back .btn.primary:hover{background:var(--mark-2)}
-.mimar .btn.soft,.oops-back .btn.soft,.quick-faq .btn.soft,#helpPage .btn.soft{
-  background:var(--blue-soft);border-color:transparent;color:var(--mark-2)}
-.mimar .btn.ghost,.oops-back .btn.ghost,.quick-faq .btn.ghost,#helpPage .btn.ghost{
-  background:transparent;border-color:transparent}
-.mimar .btn.link,.oops-back .btn.link,.quick-faq .btn.link,#helpPage .btn.link{
-  border:0;background:none;color:var(--mark);padding:2px 0;font-weight:500;
-  text-decoration:underline;text-underline-offset:3px}
-.mimar .btn.sm,.oops-back .btn.sm,.toasts .btn.sm,.quick-faq .btn.sm,#helpPage .btn.sm{
-  padding:5px 10px;font-size:13px}
-.mimar .btn svg,.oops-back .btn svg,.quick-faq .btn svg{width:16px;height:16px;
-  stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+/* The help layer's buttons are now just .btn -- see the primitives above. */
 
 </style>
 </head>
 <body>
-<div class="frame">
-  <aside class="side">
+<div class="app">
+  <aside class="side" id="side">
     <a class="brand" href="landing.html">
       <svg class="datum" viewBox="0 0 12 10" aria-hidden="true">
         <path d="M6 10 L12 0 L0 0 Z"/></svg>
       <span>build<em>IT</em><i>Massing &amp; feasibility</i></span></a>
 
     <nav class="snav" id="snav">
-      <button id="vwDash" data-ic="grid">Dashboard</button>
-      <button id="vwSite" class="on" data-ic="pen">Site</button>
-      <button id="vwPlans" data-ic="plan">Floor plans</button>
-      <button id="vwMass" data-ic="cube">Massing</button>
-      <button id="vwRender" data-ic="eye">Render</button>
-      <p class="snav-h">Review</p>
-      <button id="vwInv" data-ic="list">Schedule</button>
-      <button id="vwFeas" data-ic="cash">Feasibility</button>
+      <button id="vwDash" data-ic="grid" data-route="dash">Dashboard</button>
+      <button id="vwNew" data-ic="plus" data-route="new">New scheme</button>
+      <button id="vwDesign" data-ic="cube" data-route="design" hidden>Current scheme</button>
+      <button id="vwProjects" data-ic="folder" data-route="projects">My schemes
+        <span class="count" id="navCount">0</span></button>
+      <p class="snav-h">Reference</p>
+      <button id="vwPlots" data-ic="plan" data-route="plots">Plot presets</button>
+      <button id="vwRules" data-ic="list" data-route="rules">Rules used</button>
       <p class="snav-h">Support</p>
-      <button id="vwHelp" data-ic="help">Help &amp; FAQ</button>
+      <button id="vwHelp" data-ic="help" data-route="help">Help &amp; FAQ</button>
     </nav>
 
     <p class="sfoot">Concept schemes for early-stage feasibility. Cost rates are
@@ -941,181 +1055,348 @@ select.fin{text-align:left}
       goes to a client.</p>
   </aside>
 
-  <div class="main">
+  <div class="content">
   <header class="bar">
+    <button class="menu-btn" id="btnMenu" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="ptitle">
       <h1 id="viewTitle">Dashboard</h1>
-      <input class="projname" id="projName" value="Untitled scheme"
-             spellcheck="false" aria-label="Scheme name">
     </div>
     <span class="spacer"></span>
-    <div class="readout">
+    <div class="readout" id="readout">
       <div><span>Plot</span><b class="num" id="mSite">&mdash;</b></div>
       <div><span>GFA</span><b class="num" id="mGross">&mdash;</b></div>
       <div><span>FAR</span><b class="num" id="mFar">&mdash;</b></div>
       <div><span>Efficiency</span><b class="num" id="mEff">&mdash;</b></div>
       <div><span>Height</span><b class="num" id="mHt">&mdash;</b></div>
     </div>
-    <button class="hbtn" id="btnInputs">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      Inputs</button>
-    <button class="hbtn solid" id="btnGen">Generate options</button>
+    <button class="hbtn solid" id="btnGen">New scheme</button>
   </header>
 
-  <div class="body">
-    <!-- ============ one inputs box ============ -->
-    <div class="scrim" id="scrim"></div>
-    <div class="panel" id="panel">
-      <div class="scroll">
-        <details class="acc" open><summary>Location</summary><div class="in">
-          <input class="fld" id="locName" placeholder="Site address or plot no.">
-          <p class="lbl" style="margin:10px 0 7px">Trace over a site image</p>
-          <input type="file" id="imgFile" accept="image/*" style="display:none">
-          <div class="row2">
-            <button class="btn quiet sm" id="imgPick">Load image</button>
-            <button class="btn quiet sm" id="imgClear">Remove</button>
+  <!-- ===================== DASHBOARD ===================== -->
+  <section class="page" data-view="dash">
+    <div class="card hero">
+      <div class="hero-main">
+        <span class="lab">Feasibility assistant</span>
+        <h2 id="greet">What are we building?</h2>
+        <p>Describe the scheme in your own words. buildIT picks out the plot, the
+          ratio and the mix, then solves envelopes that fit your bye-laws.</p>
+        <div class="ask">
+          <label for="askInput" class="lab" style="padding:2px 4px 0">Describe the scheme</label>
+          <textarea id="askInput" rows="2" placeholder="e.g. 130 by 170 ft plot, 1:4 FAR, retail on the ground floor, mostly 2 beds, 25 ft front setback"></textarea>
+          <div class="row">
+            <div class="examples" id="examples"></div>
+            <button class="btn primary" id="askGo">Understand</button>
           </div>
-          <div class="ctl" style="margin-top:12px"><label><span>Image scale</span><b class="num" id="vImgSc">100%</b></label>
-            <input type="range" id="sImgSc" min="10" max="400" step="2" value="100"></div>
-          <div class="ctl"><label><span>Underlay opacity</span><b class="num" id="vImgOp">55%</b></label>
-            <input type="range" id="sImgOp" min="10" max="100" step="5" value="55"></div>
-          <p class="tiny" id="imgSpan"></p>
-          <p class="tiny" id="imgNote">Drop in a screenshot from a map or a survey, set its scale, then trace the boundary with the Draw tool.</p>
-        </div></details>
+        </div>
+        <div class="understood" id="understood" hidden></div>
+      </div>
+      <div class="hero-art" aria-hidden="true" id="heroArt"></div>
+    </div>
 
-        <details class="acc" open><summary>Site <i>feet</i></summary><div class="in">
-          <div class="card" style="margin-bottom:12px"><p class="note" id="plotNote" style="font-size:11.5px;color:var(--text-2)"></p></div>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="dash-grid">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+        <div class="row between"><div><h2>Recent schemes</h2>
+          <p class="sub">Saved in this browser</p></div>
+          <button class="btn sm" data-route="projects">View all</button></div>
+        <div id="recent"></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+        <div><h2>What each plot can hold</h2>
+          <p class="sub">Buildable area at the ratio you have set, in sq ft</p></div>
+        <div class="bars" id="plotBars"></div>
+        <div class="legend"><span><i style="background:var(--mark)"></i>Ground plate</span>
+          <span><i style="background:var(--sky-2)"></i>Total permissible</span></div>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+      <div><h2>Start from a plot size</h2>
+        <p class="sub">Typical answers are filled in &mdash; you can change everything</p></div>
+      <div class="quick" id="quickPlots"></div>
+    </div>
+    <div class="dash-help" id="quickDash"></div>
+    <div class="sheet" id="dashSheet" hidden></div>
+  </section>
+
+  <!-- ===================== NEW SCHEME (the brief) ===================== -->
+  <section class="page" data-view="new" hidden>
+    <div class="wiz-layout">
+    <div class="wiz">
+      <ol class="wsteps" id="wsteps" aria-label="Progress"></ol>
+
+      <!-- ---- step 0: the site ---- -->
+      <div class="card card-q" data-step="0">
+        <div class="q-head"><h2>Where are you building?</h2>
+          <p>Drag a corner to reshape the plot, or trace it over a map. Then give
+            each edge its setback in feet.</p></div>
+        <div class="q">
+          <input class="fld" id="locName" placeholder="Site address or plot no.">
+        </div>
+        <div class="q">
+          <div class="site-stage">
+            <div class="pane on" id="paneSite"><canvas id="site"></canvas>
+              <input id="dimEdit" class="dimedit" type="number" min="5" max="2000" step="1">
+              <p class="hint" id="siteHint">Drag a corner to reshape &middot; click a dimension to type it</p></div>
+            <div class="rail" id="rail">
+              <button id="tSelect" class="on" title="Select and move corners">
+                <svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L10.5 19z"/></svg></button>
+              <button id="tDraw" title="Draw a new plot">
+                <svg viewBox="0 0 24 24"><path d="M4 19l3-1 11-11-2-2L5 16z"/><path d="M14 5l2-2 3 3-2 2"/></svg></button>
+              <button id="tAdd" title="Add a corner">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 9v6M9 12h6"/></svg></button>
+              <button id="tDel" title="Remove a corner">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 12h6"/></svg></button>
+              <button id="tImg" title="Move the site image">
+                <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg></button>
+              <button id="tCal" title="Set the image scale">
+                <svg viewBox="0 0 24 24"><path d="M4 12h16M4 9v6M20 9v6M9 10v4M14 10v4"/></svg></button>
+              <button id="tEnt" title="Place the main entrance">
+                <svg viewBox="0 0 24 24"><path d="M14 3H6v18h8"/><path d="M14 3l4 2v14l-4 2z"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg></button>
+              <div class="gap"></div>
+              <button id="tFit" title="Fit to view">
+                <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+              <button id="tReset" title="Reset to a rectangular plot">
+                <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 2.6 5.9"/><path d="M4 20v-5h5"/></svg></button>
+            </div>
+          </div>
+          <p class="note" id="plotNote"></p>
+        </div>
+        <div class="q">
+          <span class="q-title">Setback on each edge</span>
+          <p class="q-help">A bay is only buildable if all four of its corners clear
+            every one of these lines.</p>
           <div id="edgeRows"></div>
-          <button class="btn quiet sm" id="applyAll" style="margin-top:10px">Match all setbacks to first</button>
-        </div></details>
+          <button class="btn sm" id="applyAll" style="margin-top:10px">Match all setbacks to first</button>
+        </div>
+        <details class="regs"><summary>Trace over a map or survey image</summary>
+          <div class="regs-grid">
+            <input type="file" id="imgFile" accept="image/*" style="display:none">
+            <div class="row">
+              <button class="btn sm" id="imgPick">Load image</button>
+              <button class="btn sm" id="imgClear">Remove</button>
+            </div>
+            <div class="ctl"><label><span>Image scale</span><b class="num" id="vImgSc">100%</b></label>
+              <input type="range" id="sImgSc" min="10" max="400" step="2" value="100"></div>
+            <div class="ctl"><label><span>Underlay opacity</span><b class="num" id="vImgOp">55%</b></label>
+              <input type="range" id="sImgOp" min="10" max="100" step="5" value="55"></div>
+            <p class="tiny" id="imgSpan"></p>
+            <p class="tiny" id="imgNote">Drop in a screenshot from a map or a survey,
+              set its scale, then trace the boundary with the Draw tool.</p>
+          </div>
+        </details>
+        <div class="wnav"><span></span><button class="btn primary lg" data-next>Next: what goes in it</button></div>
+      </div>
 
-        <details class="acc" open><summary>Floor area ratio</summary><div class="in">
+      <!-- ---- step 1: the programme ---- -->
+      <div class="card card-q" data-step="1" hidden>
+        <div class="q-head"><h2>What goes in it, and how much?</h2>
+          <p>The ratio sets how much floor area you may cover. Everything else
+            decides how that area is shaped.</p></div>
+        <div class="q">
+          <span class="q-title">Floor area ratio</span>
           <div class="ratios" id="ratios"></div>
           <div class="alw" id="allowNote"></div>
-          <div class="ctl"><label><span>Building angle</span><b class="num" id="vAng">0&deg;</b></label>
-            <input type="range" id="sAng" min="0" max="89" step="1" value="0"></div>
-          <button class="btn quiet sm" id="alignPlot">Align grid to the longest boundary</button>
-          <div class="ctl" style="margin-top:14px"><label><span>Height limit</span><b class="num" id="vHl">260 ft</b></label>
-            <input type="range" id="sHl" min="30" max="600" step="10" value="260"></div>
-          <div class="ctl"><label><span>Floor to floor</span><b class="num" id="vFh">11 ft</b></label>
-            <input type="range" id="sFh" min="9" max="18" step="1" value="11"></div>
-          <div class="ctl"><label><span>Structural bay</span><b class="num" id="vBay">20 ft</b></label>
-            <input type="range" id="sBay" min="12" max="34" step="1" value="20"></div>
-          <div class="ctl"><label><span>Upper-storey setback</span><b class="num" id="vUp">1 ft</b></label>
-            <input type="range" id="sUp" min="0" max="12" step="1" value="1"></div>
-          <p class="lbl" style="margin:12px 0 7px">Form</p>
+        </div>
+        <div class="q">
+          <span class="q-title">Use on each level</span>
+          <p class="q-help">Pick a use, then click or drag the levels to paint it.
+            <i id="stackNote"></i></p>
+          <div class="uses" id="usePick"></div>
+          <div class="stackwrap"><div class="stack" id="stack"></div></div>
+        </div>
+        <div class="q">
+          <span class="q-title">Unit mix <i id="mixCount"></i></span>
+          <div id="mixRows"></div>
+          <button class="btn sm" id="addUnit" style="margin-top:8px">Add unit type</button>
+        </div>
+        <div class="q">
+          <span class="q-title">Form</span>
           <div class="styles" id="massPick"></div>
           <div class="ctl" style="margin-top:12px" id="twistCtl"><label><span>Twist per floor</span><b class="num" id="vTwist">2&deg;</b></label>
             <input type="range" id="sTwist" min="0" max="8" step="1" value="2"></div>
-        </div></details>
+        </div>
+        <div class="wnav"><button class="btn lg" data-back>Back</button>
+          <button class="btn primary lg" data-next>Next: rules and core</button></div>
+      </div>
 
-        <details class="acc" open><summary>Stacking <i id="stackNote"></i></summary><div class="in">
-          <p class="tiny">Pick a use, then click or drag the levels to paint it.</p>
-          <div class="uses" id="usePick"></div>
-          <div class="stackwrap"><div class="stack" id="stack"></div></div>
-        </div></details>
-
-        <details class="acc" open><summary>Unit mix <i id="mixCount"></i></summary><div class="in">
-          <div id="mixRows"></div>
-          <button class="btn quiet sm" id="addUnit">Add unit type</button>
-        </div></details>
-
-        <details class="acc"><summary>Core &amp; services <i>per floor</i></summary><div class="in">
+      <!-- ---- step 2: rules and core ---- -->
+      <div class="card card-q" data-step="2" hidden>
+        <div class="q-head"><h2>Rules, structure and core</h2>
+          <p>The limits the envelope has to respect, and what every floor has to
+            carry before a single unit is laid out.</p></div>
+        <div class="q">
+          <span class="q-title">Limits</span>
+          <div class="ctl"><label><span>Height limit</span><b class="num" id="vHl">260 ft</b></label>
+            <input type="range" id="sHl" min="30" max="600" step="10" value="260"></div>
+          <div class="ctl"><label><span>Floor to floor</span><b class="num" id="vFh">11 ft</b></label>
+            <input type="range" id="sFh" min="9" max="18" step="1" value="11"></div>
+          <div class="ctl"><label><span>Upper-storey setback</span><b class="num" id="vUp">1 ft</b></label>
+            <input type="range" id="sUp" min="0" max="12" step="1" value="1"></div>
+        </div>
+        <div class="q">
+          <span class="q-title">Structural grid</span>
+          <div class="ctl"><label><span>Structural bay</span><b class="num" id="vBay">20 ft</b></label>
+            <input type="range" id="sBay" min="12" max="34" step="1" value="20"></div>
+          <div class="ctl"><label><span>Building angle</span><b class="num" id="vAng">0&deg;</b></label>
+            <input type="range" id="sAng" min="0" max="89" step="1" value="0"></div>
+          <button class="btn sm" id="alignPlot">Align grid to the longest boundary</button>
+        </div>
+        <div class="q">
+          <span class="q-title">Core and services, per floor</span>
           <div class="ctl"><label><span>Circulation</span><b class="num" id="vCor">18%</b></label>
             <input type="range" id="sCor" min="8" max="20" step="1" value="16"></div>
-          <div class="unit" style="margin-bottom:8px">
-            <p class="lbl" style="margin:0 0 7px">Vertical circulation</p>
-            <div class="g4">
-              <div><label>Lifts</label><input class="fld" type="number" min="1" max="12" id="cLiftN" value="2"></div>
-              <div><label>ft&sup2; each</label><input class="fld" type="number" id="cLifts" value="70"></div>
-              <div><label>Stairs</label><input class="fld" type="number" min="1" max="6" id="cStairN" value="2"></div>
-              <div><label>ft&sup2; each</label><input class="fld" type="number" id="cStairs" value="300"></div>
-            </div>
-            <label class="chk"><input type="checkbox" id="cSprink" checked>
-              <span>Sprinklered throughout</span></label>
-            <p class="tiny" id="coreNote" style="margin:7px 0 0"></p>
-            <div id="coreDemand"></div>
+          <div class="g4">
+            <div><label>Lifts</label><input class="fld" type="number" min="1" max="12" id="cLiftN" value="2"></div>
+            <div><label>ft&sup2; each</label><input class="fld" type="number" id="cLifts" value="70"></div>
+            <div><label>Stairs</label><input class="fld" type="number" min="1" max="6" id="cStairN" value="2"></div>
+            <div><label>ft&sup2; each</label><input class="fld" type="number" id="cStairs" value="300"></div>
           </div>
-          <div class="unit" style="margin-bottom:0"><div class="g">
+          <div class="g" style="margin-top:8px">
             <div><label>Restrooms ft&sup2;</label><input class="fld" type="number" id="cWc" value="300"></div>
             <div><label>Plant ft&sup2;</label><input class="fld" type="number" id="cSvc" value="450"></div>
-          </div></div>
-        </div></details>
-
-        <details class="acc"><summary>Facade <i id="styleNote"></i></summary><div class="in">
-          <div class="styles" id="styles"></div>
-          <p class="lbl" style="margin:12px 0 7px">Cladding material</p>
-          <div class="mats" id="mats"></div>
-          <p class="tiny" style="margin-top:10px">Shown in the Render view.</p>
-        </div></details>
-
-        <details class="acc"><summary>Search</summary><div class="in">
-          <div class="ctl"><label><span>Refinement</span><b class="num" id="vIter">900</b></label>
-            <input type="range" id="sIter" min="100" max="2000" step="100" value="900"></div>
-          <div class="ctl"><label><span>Options</span><b class="num" id="vOpts">5</b></label>
-            <input type="range" id="sOpts" min="1" max="6" step="1" value="5"></div>
-        </div></details>
-      </div>
-
-      <div class="foot">
-        <button class="btn" id="go">Generate options</button>
-        <div class="row2" style="margin-top:8px">
-          <button class="btn quiet sm" id="dl">JSON</button>
-          <button class="btn quiet sm" id="csv">Schedule CSV</button>
+          </div>
+          <label class="toggle" style="margin-top:10px"><input type="checkbox" id="cSprink" checked>
+            <div><b>Sprinklered throughout</b><span>Doubles the permitted travel distance
+              and relaxes the exit count under the IBC</span></div></label>
+          <p class="tiny" id="coreNote" style="margin:7px 0 0"></p>
+          <div id="coreDemand"></div>
         </div>
+        <details class="regs"><summary>Facade and search settings</summary>
+          <div class="regs-grid">
+            <p class="lab">Elevation style <i id="styleNote"></i></p>
+            <div class="styles" id="styles"></div>
+            <p class="lab" style="margin-top:10px">Cladding material</p>
+            <div class="mats" id="mats"></div>
+            <div class="ctl" style="margin-top:12px"><label><span>Refinement</span><b class="num" id="vIter">900</b></label>
+              <input type="range" id="sIter" min="100" max="2000" step="100" value="900"></div>
+            <div class="ctl"><label><span>Options</span><b class="num" id="vOpts">5</b></label>
+              <input type="range" id="sOpts" min="1" max="6" step="1" value="5"></div>
+          </div>
+        </details>
+        <div class="wnav"><button class="btn lg" data-back>Back</button>
+          <button class="btn primary lg" data-next>Next: review</button></div>
+      </div>
+
+      <!-- ---- step 3: review ---- -->
+      <div class="card card-q" data-step="3" hidden>
+        <div class="q-head"><h2>Check the brief</h2>
+          <p>buildIT will solve envelopes that fit these answers, then lay out
+            every storey and price the result.</p></div>
+        <dl class="review" id="review"></dl>
+        <div class="alw" id="allowNote2"></div>
+        <div class="wnav"><button class="btn lg" data-back>Back</button>
+          <button class="btn primary lg" id="go">Generate options</button></div>
+      </div>
+
+      <div class="card working" id="working" hidden><span id="workingTxt">Solving</span></div>
+    </div>
+    <aside class="wiz-aside" id="quickNew" aria-label="Quick answers"></aside>
+    </div>
+  </section>
+
+  <!-- ===================== CURRENT SCHEME ===================== -->
+  <section class="page" data-view="design" hidden>
+    <div class="ws-head">
+      <div class="ws-title">
+        <input id="projName" type="text" aria-label="Scheme name" value="Untitled scheme">
+        <span class="sub" id="resSub"></span>
+      </div>
+      <div class="ws-actions">
+        <button class="btn" id="btnBrief">Change brief</button>
+        <button class="btn" id="btnMore">New options</button>
+        <button class="btn primary" id="pSaveTop">Save scheme</button>
       </div>
     </div>
+    <p class="notes" id="tabMsg" hidden></p>
 
-    <!-- ============ canvas ============ -->
-    <div class="stage">
-      <div class="pane on" id="paneSite"><canvas id="site"></canvas>
-        <input id="dimEdit" class="dimedit" type="number" min="5" max="2000" step="1">
-        <p class="hint" id="siteHint">Drag a corner to reshape · click a dimension to type it</p></div>
-      <div class="pane" id="paneMass"><canvas id="gl"></canvas>
-        <p class="hint">Drag to orbit &middot; scroll to zoom</p></div>
-      <div class="pane" id="panePlans"><div class="plans" id="plansGrid"></div></div>
-      <div class="pane" id="paneInv"><div class="sheet" id="sheet"></div></div>
-      <div class="pane" id="paneFeas"><div class="sheet" id="feasSheet"></div></div>
-      <div class="pane" id="paneDash"><div class="sheet" id="dashSheet"></div></div>
-      <div class="pane" id="paneHelp"><div class="sheet"><div id="helpPage"
-        style="display:flex;flex-direction:column;gap:20px"></div></div></div>
+    <div><span class="lab">Options that fit</span>
+      <div class="opts" id="opts" style="margin-top:8px"></div></div>
 
+    <div class="ws-grid">
+      <div class="card" style="min-width:0">
+        <div class="tabs" role="tablist" id="wsTabs">
+          <button role="tab" data-tab="plans" aria-selected="true">Plans</button>
+          <button role="tab" data-tab="3d">3D &amp; styles</button>
+          <button role="tab" data-tab="edit">Customise</button>
+          <button role="tab" data-tab="sched">Schedule</button>
+          <button role="tab" data-tab="feas">Feasibility</button>
+          <button role="tab" data-tab="rules">Compliance</button>
+        </div>
 
-      <div class="rail" id="rail">
-        <button id="tSelect" class="on" title="Select and move corners">
-          <svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L10.5 19z"/></svg></button>
-        <button id="tDraw" title="Draw a new plot">
-          <svg viewBox="0 0 24 24"><path d="M4 19l3-1 11-11-2-2L5 16z"/><path d="M14 5l2-2 3 3-2 2"/></svg></button>
-        <button id="tAdd" title="Add a corner">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 9v6M9 12h6"/></svg></button>
-        <button id="tDel" title="Remove a corner">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 12h6"/></svg></button>
-        <button id="tImg" title="Move the site image">
-          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg></button>
-        <button id="tCal" title="Set the image scale">
-          <svg viewBox="0 0 24 24"><path d="M4 12h16M4 9v6M20 9v6M9 10v4M14 10v4"/></svg></button>
-        <button id="tEnt" title="Place the main entrance">
-          <svg viewBox="0 0 24 24"><path d="M14 3H6v18h8"/><path d="M14 3l4 2v14l-4 2z"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg></button>
-        <div class="gap"></div>
-        <button id="tFit" title="Fit to view">
-          <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-        <button id="tReset" title="Reset to a rectangular plot">
-          <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 2.6 5.9"/><path d="M4 20v-5h5"/></svg></button>
+        <div class="tabpanel" data-panel="plans">
+          <div class="plans" id="plansGrid"></div>
+          <p class="hint">Click a storey to open it full size and move its walls.</p>
+        </div>
+
+        <div class="tabpanel" data-panel="3d" hidden>
+          <div class="row between">
+            <div><h3>The building</h3>
+              <p class="hint">Drag to orbit &middot; scroll to zoom</p></div>
+            <div class="seg" id="m3dViews" role="group" aria-label="View">
+              <button data-v="mass" aria-selected="true">Massing</button>
+              <button data-v="render">Rendered</button></div>
+          </div>
+          <div class="m3d-stage">
+            <div class="pane on" id="paneMass"><canvas id="gl"></canvas></div>
+            <div class="floors" id="floors"></div>
+          </div>
+        </div>
+
+        <div class="tabpanel" data-panel="edit" hidden>
+          <div class="row between">
+            <p class="hint" style="max-width:70ch">Every storey is drawn from its
+              demising walls. <b>Click a wall</b> to select it, <b>drag</b> to move
+              it and re-area both units, or press <b>Delete</b> to merge them. An
+              edit that would strand a unit off the corridor is undone.</p>
+          </div>
+          <div class="plans" id="editGrid"></div>
+        </div>
+
+        <div class="tabpanel" data-panel="sched" hidden><div class="sheet" id="sheet"></div></div>
+        <div class="tabpanel" data-panel="feas" hidden><div class="sheet" id="feasSheet"></div></div>
+        <div class="tabpanel" data-panel="rules" hidden><div class="sheet" id="rulesSheet"></div></div>
       </div>
-
-      <div class="floors" id="floors"></div>
-      <div class="flag" id="tabMsg"></div>
-
-      <div class="ribbon" id="ribbon">
-        <p class="lbl">Options that fit</p>
-        <div class="opts" id="opts"></div>
-      </div>
-      <div class="working" id="working"><span id="workingTxt">Solving</span></div>
+      <aside class="info" id="info"></aside>
     </div>
-    <aside class="info" id="info"></aside>
-  </div>
+  </section>
+
+  <!-- ===================== MY SCHEMES ===================== -->
+  <section class="page" data-view="projects" hidden>
+    <div class="toolbar">
+      <input type="text" id="projSearch" placeholder="Search schemes" aria-label="Search schemes">
+      <div style="flex:1"></div>
+      <button class="btn primary" data-route="new">New scheme</button>
+    </div>
+    <div id="projList"></div>
+  </section>
+
+  <!-- ===================== PLOT PRESETS ===================== -->
+  <section class="page" data-view="plots" hidden>
+    <div class="card card-pad">
+      <h2>What each plot can hold</h2>
+      <p class="sub">Standard plot sizes, and what the ratio you have set allows on
+        each one. Pick one to start a scheme from it.</p>
+    </div>
+    <div id="plotsPage"></div>
+  </section>
+
+  <!-- ===================== RULES USED ===================== -->
+  <section class="page" data-view="rules" hidden>
+    <div id="rulesPage"></div>
+  </section>
+
+  <!-- ===================== HELP ===================== -->
+  <section class="page" data-view="help" hidden>
+    <div id="helpPage" style="display:flex;flex-direction:column;gap:20px"></div>
+  </section>
+
   </div>
 </div>
+<div class="scrim" id="scrim"></div>
 
 <!-- ============ plan editor ============ -->
 <div class="modal" id="planModal">
@@ -5442,9 +5723,10 @@ function drawPlan(cv, lvl, size, detail){
     g.textAlign='center'; g.fillText('50 ft', sx+sl/2, sy-6);
   }
 }
-function paintPlans(){
+function paintPlans(host){
+  const el = host || $('plansGrid');
   const {vg,cfg}=state; const opt=state.options[state.pick];
-  if(!vg||!opt){ $('plansGrid').innerHTML=''; return; }
+  if(!vg||!opt){ el.innerHTML=''; return; }
   const html=[];
   // basements read downward: B1 is the first level below grade
   const park = state.parking;
@@ -5459,12 +5741,12 @@ function paintPlans(){
     html.push(`<figure><canvas data-lvl="${s}"></canvas>
       <figcaption><b>Level ${s+1}</b><span>${fmt(gfa)} sq ft</span></figcaption></figure>`);
   }
-  $('plansGrid').innerHTML=html.join('');
-  $('plansGrid').querySelectorAll('figure').forEach(f=>{
+  el.innerHTML=html.join('');
+  el.querySelectorAll('figure').forEach(f=>{
     const c=f.querySelector('canvas');
     if (c.dataset.lvl !== undefined) f.onclick=()=>openPlan(+c.dataset.lvl);
   });
-  $('plansGrid').querySelectorAll('canvas').forEach(cv=>{
+  el.querySelectorAll('canvas').forEach(cv=>{
     const w=cv.parentElement.clientWidth-20;
     cv.style.width=w+'px'; cv.style.height=w+'px';
     if (cv.dataset.park !== undefined) drawParkingPlan(cv,+cv.dataset.park,w);
@@ -5624,7 +5906,13 @@ function paintSheet(){
       ${fmt(s.bay)} sq ft, so any room smaller than one bay is rounded up &mdash; that is why
       small service rooms read above target. Achieved sizes more than 20% off target are
       marked in amber. Net leasable counts only unit types from the mix; circulation,
-      stairs, lifts, restrooms and plant are treated as core.</p>`;
+      stairs, lifts, restrooms and plant are treated as core.</p>
+    <div class="row" style="margin-top:18px">
+      <button class="btn sm" id="dl">Download JSON</button>
+      <button class="btn sm" id="csv">Download schedule CSV</button>
+    </div>`;
+  $('dl').onclick = download;
+  $('csv').onclick = exportCSV;
 }
 function exportCSV(){
   const s=schedule(); if(!s) return;
@@ -5678,9 +5966,9 @@ function paintRibbon(){
       <div class="o">${s.storeys} storeys · ${fmt(Math.round(s.footprint))} sq ft plate
         · ${Math.round(s.eff*100)}% eff · ${s.typology}</div></button>`).join('');
   $('opts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
-    applyOption(+b.dataset.i); state.reveal=1; refreshAll();
+    applyOption(+b.dataset.i); state.reveal=1; refreshAll(); wsSub();
+    if (state.wsTab) wsTab(state.wsTab);
   });
-  $('ribbon').style.display = state.options.length ? '' : 'none';
   paintInfo(); paintCoreDemand();
 }
 
@@ -5804,42 +6092,114 @@ const VIEW_TITLE = { dash:'Dashboard', site:'Site', mass:'Massing',
   render:'Render', plans:'Floor plans', inv:'Area schedule',
   feas:'Cost and feasibility', help:'Help & FAQ' };
 
+/* ---------------------------------------------------------------------------
+   Routing.
+
+   The application used to be one canvas with a row of view tabs over it and an
+   inputs column beside it. It is now a set of pages, the way BuildMe is: a
+   dashboard you arrive on, a brief you fill in, and a workspace you work in.
+   The workspace itself is one card with tabs.
+
+   showView keeps its old name and its old vocabulary -- 'site', 'mass',
+   'plans', 'inv' -- because fifty-odd call sites use them, and because those
+   names still describe what the caller wants to look at. What changed is where
+   each one lives: VIEWS maps a view to the page that holds it and, inside the
+   workspace, to the tab.
+--------------------------------------------------------------------------- */
+const VIEWS = {
+  dash:   { route:'dash' },
+  site:   { route:'new', step:0 },
+  brief:  { route:'new' },
+  mass:   { route:'design', tab:'3d' },
+  render: { route:'design', tab:'3d' },
+  plans:  { route:'design', tab:'plans' },
+  edit:   { route:'design', tab:'edit' },
+  inv:    { route:'design', tab:'sched' },
+  feas:   { route:'design', tab:'feas' },
+  rules:  { route:'rules' },
+  projects:{ route:'projects' },
+  plots:  { route:'plots' },
+  help:   { route:'help' },
+};
+const ROUTE_TITLE = { dash:'Dashboard', new:'New scheme', design:'Current scheme',
+  projects:'My schemes', plots:'Plot presets', rules:'Rules used', help:'Help & FAQ' };
+const NAV_FOR = { dash:'vwDash', new:'vwNew', design:'vwDesign', projects:'vwProjects',
+  plots:'vwPlots', rules:'vwRules', help:'vwHelp' };
+
 function showView(v){
-  state.view=v;
-  const three = (v==='mass'||v==='render');
-  const map={site:'paneSite',mass:'paneMass',render:'paneMass',plans:'panePlans',inv:'paneInv'};
-  $('paneSite').classList.toggle('on', v==='site');
-  $('paneMass').classList.toggle('on', three);
-  $('panePlans').classList.toggle('on', v==='plans');
-  $('paneInv').classList.toggle('on', v==='inv');
-  $('paneFeas').classList.toggle('on', v==='feas');
-  $('paneDash').classList.toggle('on', v==='dash');
-  $('paneHelp').classList.toggle('on', v==='help');
-  for(const [id,k] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
-    ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas'],
-    ['vwHelp','help']])
-    $(id).classList.toggle('on',k===v);
-  $('rail').style.display = v==='site' ? '' : 'none';
-  $('floors').style.display = v==='mass' ? '' : 'none';
-  $('ribbon').style.display =
-    (v==='mass'||v==='render'||v==='plans') && state.options.length ? '' : 'none';
-  if (gMass){ gMass.visible = v==='mass'; gRender.visible = v==='render'; }
-  if(v==='site') paintSite();
-  if(three){ resize(); if(v==='render'){ state.floor=-1; buildRender(); } else paint3D(); }
-  if(v==='plans') paintPlans();
-  if(v==='inv') paintSheet();
-  if(v==='feas') paintFeas();
-  if(v==='dash') paintDash();
-  if(v==='help' && HELP) HELP.mountHelpPage($('helpPage'));
-  const t = $('viewTitle'); if (t) t.textContent = VIEW_TITLE[v] || 'buildIT';
-  const work = (v==='mass'||v==='render'||v==='plans');
-  document.querySelector('.body').classList.toggle('with-info', work);
-  if (work) paintInfo();
-  if (v !== 'site' && typeof openPanel === 'function') openPanel(false);
+  const spec = VIEWS[v] || VIEWS.dash;
+  state.view = v;
+  state.route = spec.route;
+
+  document.querySelectorAll('.page').forEach(p =>
+    p.hidden = p.dataset.view !== spec.route);
+  for (const [route,id] of Object.entries(NAV_FOR))
+    $(id).classList.toggle('on', route === spec.route);
+  /* Current scheme only appears in the nav once there is one, the way
+     BuildMe's does -- an empty workspace is not somewhere to send anyone. */
+  $('vwDesign').hidden = !state.options.length;
+
+  if (spec.route === 'design') wsTab(spec.tab || state.wsTab || 'plans');
+  if (spec.route === 'new' && spec.step != null) wizStep(spec.step);
+
+  const three = (v === 'mass' || v === 'render');
+  if (gMass){ gMass.visible = v === 'mass'; gRender.visible = v === 'render'; }
+  if (spec.route === 'new') paintSite();
+  if (three){ resize(); if (v === 'render'){ state.floor = -1; buildRender(); } else paint3D(); }
+
+  $('readout').style.display = spec.route === 'design' ? '' : 'none';
+  $('btnGen').textContent = spec.route === 'design' ? 'Change brief' : 'New scheme';
+  const t = $('viewTitle'); if (t) t.textContent = ROUTE_TITLE[spec.route] || 'buildIT';
+
+  if (spec.route === 'dash') paintDash();
+  if (spec.route === 'projects') paintProjects();
+  if (spec.route === 'plots') paintPlots();
+  if (spec.route === 'rules') paintRulesPage();
+  if (spec.route === 'help' && HELP) HELP.mountHelpPage($('helpPage'));
+
   /* Mimar follows the screen: each view gets its own greeting and its own
      rotation of questions. The guide hides itself on the help page, where
      the whole FAQ is already on screen and a floating copy of it is noise. */
-  if (HELP){ HELP.setScreen(v); HELP.hideGuide(v==='help'); }
+  if (spec.route === 'design') wsSub();
+  if (HELP){ HELP.setScreen(v); HELP.hideGuide(v === 'help'); }
+  const c = document.querySelector('.content'); if (c) c.scrollTop = 0;
+}
+
+/* Which tab of the workspace card is showing. */
+function wsTab(tab){
+  state.wsTab = tab;
+  document.querySelectorAll('#wsTabs [role=tab]').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  document.querySelectorAll('[data-panel]').forEach(p =>
+    p.hidden = p.dataset.panel !== tab);
+  if (tab === 'plans') paintPlans();
+  if (tab === 'edit')  paintEditGrid();
+  if (tab === 'sched') paintSheet();
+  if (tab === 'feas')  paintFeas();
+  if (tab === 'rules') paintRulesTab();
+  if (tab === '3d'){ resize(); if (state.view === 'render') buildRender(); else paint3D(); }
+  $('floors').style.display = (tab === '3d' && state.view === 'mass') ? '' : 'none';
+  paintInfo();
+}
+
+/* Which card of the brief wizard is showing. */
+function wizStep(n){
+  const cards = [...document.querySelectorAll('.card-q')];
+  state.wizStep = Math.max(0, Math.min(cards.length - 1, n));
+  cards.forEach((c,i) => c.hidden = i !== state.wizStep);
+  paintWizSteps();
+  if (state.wizStep === 0){ resize2(); paintSite(); }
+  if (state.wizStep === 3) paintReview();
+}
+
+/* The progress rail above the wizard. */
+const WIZ_STEPS = ['Site', 'Programme', 'Rules & core', 'Review'];
+function paintWizSteps(){
+  $('wsteps').innerHTML = WIZ_STEPS.map((label,i) =>
+    `<li class="${i===state.wizStep?'on':''}${i<state.wizStep?' done':''}" data-step="${i}">
+      <span class="n">${i < state.wizStep ? '\u2713' : i+1}</span>${label}</li>`).join('');
+  $('wsteps').querySelectorAll('li').forEach(li =>
+    li.onclick = () => wizStep(+li.dataset.step));
 }
 function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggle('on',!!m); }
 /* Inputs have moved on from the solved grid. Anything derived from that grid --
@@ -5849,6 +6209,18 @@ function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggl
 function invalidate(){
   state.vgStale = true;
   if(state.options.length) flag('Inputs changed \u2014 generate again');
+}
+
+
+/* The line under the scheme name: what you are looking at, in one sentence. */
+function wsSub(){
+  const el = $('resSub'); if (!el) return;
+  const o = state.options[state.pick];
+  if (!o){ el.textContent = 'No options yet \u2014 change the brief and generate.'; return; }
+  const st = schemeStats(o);
+  el.innerHTML = `${String.fromCharCode(65 + state.pick)} &middot; ${st.name}
+    &middot; ${st.storeys} storeys &middot; ${fmt(Math.round(st.gfa))} sq ft
+    &middot; ${st.units} units`;
 }
 
 /* Laying units out by frontage along a corridor
@@ -7006,10 +7378,11 @@ function paintDash(){
 
   /* Mimar's quick answers sit at the foot of the dashboard, where someone
      who has just arrived is most likely to have a question. */
-  $('dashSheet').innerHTML = head + nums + cards
-    + '<div class="dash-help" id="quickDash"></div>';
+  $('dashSheet').innerHTML = head + nums + cards;
   if (HELP) HELP.mountQuick($('quickDash'), 'dash',
     { title:'Questions people ask', sub:'Tap one for Mimar\u2019s answer', n:4 });
+  if (HELP) HELP.mountQuick($('quickNew'), 'site',
+    { title:'Quick answers', sub:'About the site and the rules', n:4 });
 
   $('dashSheet').querySelectorAll('.step').forEach(el=>
     el.onclick = () => showView(el.dataset.go));
@@ -7025,7 +7398,14 @@ function paintDash(){
     const n = ($('projName').value || '').trim();
     saveProject(n || 'Untitled scheme'); paintDash();
   };
-  $('dashSheet').querySelectorAll('.pacts button').forEach(b=>{
+  wireProjectCards($('dashSheet'));
+}
+
+/* Saved-scheme cards appear on the dashboard and on My schemes, so the
+   handlers live here rather than in either of them. */
+function wireProjectCards(host){
+  if (!host) return;
+  host.querySelectorAll('.pacts button').forEach(b=>{
     b.onclick = e => {
       e.stopPropagation();
       const id = b.dataset.id;
@@ -7035,7 +7415,7 @@ function paintDash(){
         // a second click confirms: dialogs are refused in some embeddings, and
         // a destructive action should not depend on one
         if (b.dataset.armed === '1'){ deleteProject(id); return; }
-        $('dashSheet').querySelectorAll('.pacts button[data-act=del]')
+        host.querySelectorAll('.pacts button[data-act=del]')
           .forEach(x=>{ x.dataset.armed=''; x.textContent='Delete'; });
         b.dataset.armed = '1'; b.textContent = 'Confirm?';
         setTimeout(()=>{ if(b.dataset.armed==='1'){ b.dataset.armed=''; b.textContent='Delete'; } }, 4000);
@@ -7269,6 +7649,241 @@ function paintCoreDemand(){
     $('cLiftN').value  = o.liftsNeeded;
     coreNote(); invalidate(); generate(false);
   };
+}
+
+/* The pages that are not a drawing: the brief review, saved schemes, the plot
+   reference and the rules reference.
+   Part of buildIT. Concatenated into app.html by scripts/build.mjs in the
+   order listed there; everything shares one scope, so that order matters. */
+
+/* ---------------------------------------------------------------------------
+   Review — the last card of the brief, so you can read the whole thing back
+   before spending a solve on it.
+--------------------------------------------------------------------------- */
+function paintReview(){
+  const b = baseCfg(), z = sizeNow();
+  const sb = state.site.setbacks;
+  const uses = [...new Set(resolveStack(state.stack, z.storeys))]
+    .map(u => USE_LABEL[u] || u).join(', ');
+  const rows = [
+    ['Plot', `${fmt(Math.round(Math.abs(polyArea(state.site.pts))))} sq ft
+      &middot; ${state.site.pts.length} edges${state.loc ? ' &middot; ' + state.loc : ''}`],
+    ['Setbacks', sb.map(v => v + ' ft').join(' &middot; ')],
+    ['Ratio', `1:${state.ratio} &mdash; ${fmt(Math.round(z.allowed))} sq ft permissible`],
+    ['Storeys', `${z.storeys} at ${b.floorH} ft, ${z.height} ft tall
+      (limit ${b.heightLimit} ft)`],
+    ['Uses', uses || '—'],
+    ['Unit mix', state.mix.map(m => m.name).join(', ') || '—'],
+    ['Structure', `${b.bay} ft bays${b.gridAngle ? ', grid at ' + b.gridAngle + '°' : ''}
+      &middot; ${MASSINGS.find(m => m[0] === state.massing)[1].toLowerCase()} form`],
+    ['Core', `${+$('cLiftN').value} lift${+$('cLiftN').value > 1 ? 's' : ''},
+      ${+$('cStairN').value} stair${+$('cStairN').value > 1 ? 's' : ''},
+      ${$('cSprink').checked ? 'sprinklered' : 'not sprinklered'}`],
+    ['Options', `${+$('sOpts').value} scheme${+$('sOpts').value > 1 ? 's' : ''}`],
+  ];
+  $('review').innerHTML = rows.map(([k,v]) =>
+    `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  $('allowNote2').innerHTML = $('allowNote').innerHTML;
+}
+
+/* ---------------------------------------------------------------------------
+   My schemes.
+--------------------------------------------------------------------------- */
+function paintProjects(){
+  const q = ($('projSearch').value || '').trim().toLowerCase();
+  const list = readStore().filter(p => !q || (p.name || '').toLowerCase().includes(q));
+  $('navCount').textContent = readStore().length;
+  if (!list.length){
+    $('projList').innerHTML = `<div class="empty-state">
+      ${HELP ? HELP.mimarSVG('mood-think mini') : ''}
+      <p>${q ? 'No scheme matches “' + q + '”.'
+            : 'Nothing saved yet. Build a scheme and press Save.'}</p></div>`;
+    return;
+  }
+  $('projList').innerHTML = `<div class="pgrid">${list.map(p => `
+    <div class="pcard${p.id === state.projectId ? ' on' : ''}" data-id="${p.id}">
+      <b>${p.name}</b>
+      <span class="tiny">${new Date(p.updated).toLocaleDateString()}
+        ${p.card && p.card.gfa ? '&middot; ' + fmt(p.card.gfa) + ' sq ft' : '&middot; not solved'}</span>
+      <span class="tiny">${p.card && p.card.units ? p.card.units + ' units' : ''}
+        ${p.card && p.card.margin != null ? '&middot; ' + (p.card.margin*100).toFixed(0) + '% on cost' : ''}</span>
+      <div class="pacts">
+        <button data-act="open" data-id="${p.id}">Open</button>
+        <button data-act="dup"  data-id="${p.id}">Duplicate</button>
+        <button data-act="del"  data-id="${p.id}" class="danger">Delete</button>
+      </div>
+    </div>`).join('')}</div>`;
+  wireProjectCards($('projList'));
+}
+
+/* ---------------------------------------------------------------------------
+   Plot presets. The standard plot sizes people actually buy here, and what the
+   ratio currently set would allow on each. Picking one loads it as the site.
+--------------------------------------------------------------------------- */
+const PLOT_PRESETS = [
+  { w: 25,  d: 50,  name: '5 Marla',   note: 'Shop row or a small block' },
+  { w: 30,  d: 60,  name: '8 Marla',   note: 'Corner plaza' },
+  { w: 35,  d: 70,  name: '10 Marla',  note: 'Mixed use, lifts just viable' },
+  { w: 50,  d: 90,  name: '1 Kanal',   note: 'A double-loaded bar fits across' },
+  { w: 60,  d: 120, name: '1.6 Kanal', note: 'Courtyard becomes possible' },
+  { w: 75,  d: 120, name: '2 Kanal',   note: 'Full perimeter block' },
+  { w: 100, d: 170, name: '4 Kanal',   note: 'Tower and podium' },
+  { w: 130, d: 170, name: '5 Kanal',   note: 'Anything on this list' },
+];
+
+/* What a preset would actually yield, at the settings currently in the brief.
+   Running the real sizing rather than a rule of thumb means the page cannot
+   drift away from what pressing Generate would give you. */
+function presetYield(pre){
+  const pts = [{x:0,y:0},{x:pre.w,y:0},{x:pre.w,y:pre.d},{x:0,y:pre.d}];
+  const setbacks = new Array(4).fill(0).map((_, i) => state.site.setbacks[i] != null
+    ? state.site.setbacks[i] : 10);
+  const site = { pts, setbacks };
+  const cfg = baseCfg();
+  const z = sizeBuilding(site, cfg);
+  const vg = buildVoxelGraph(site, { ...cfg, stories: Math.max(1, z.storeys), allowed: z.allowed });
+  const plate = vg.voxels.length ? storeyPlate(vg, 0) : null;
+  return { ...z, plate: plate ? plate.w * plate.d : 0, area: pre.w * pre.d };
+}
+
+function paintPlots(){
+  const rows = PLOT_PRESETS.map(p => ({ p, y: presetYield(p) }));
+  const max = Math.max(1, ...rows.map(r => r.y.allowed));
+  $('plotsPage').innerHTML = `<div class="pgrid wide">${rows.map(({p,y}) => `
+    <div class="card card-pad plot-card" data-w="${p.w}" data-d="${p.d}">
+      <div class="row between"><b>${p.name}</b>
+        <span class="tiny">${p.w} &times; ${p.d} ft</span></div>
+      <p class="hint" style="margin:2px 0 10px">${p.note}</p>
+      <div class="bar"><i style="width:${(y.allowed/max*100).toFixed(1)}%"></i></div>
+      <dl class="mini">
+        <div><dt>Plot</dt><dd>${fmt(y.area)} sq ft</dd></div>
+        <div><dt>Ground plate</dt><dd>${y.plate ? fmt(Math.round(y.plate)) + ' sq ft' : 'nothing fits'}</dd></div>
+        <div><dt>Permissible</dt><dd>${fmt(Math.round(y.allowed))} sq ft</dd></div>
+        <div><dt>Storeys</dt><dd>${y.plate ? y.storeys : '—'}</dd></div>
+      </dl>
+      <button class="btn sm" data-use="1">Start from this plot</button>
+    </div>`).join('')}</div>
+    <p class="hint" style="margin-top:14px">At 1:${state.ratio} with your current
+      setbacks, height limit and ${baseCfg().bay} ft bays. Change those in the
+      brief and these move with them.</p>`;
+
+  $('plotsPage').querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
+    const c = b.closest('.plot-card');
+    usePlot(+c.dataset.w, +c.dataset.d);
+  });
+}
+
+/* Load a rectangular plot of the given size as the site, and open the brief. */
+function usePlot(w, d){
+  state.site.pts = [{x:0,y:0},{x:w,y:0},{x:w,y:d},{x:0,y:d}];
+  while (state.site.setbacks.length < 4) state.site.setbacks.push(10);
+  state.site.setbacks.length = 4;
+  state.entrances = []; state.vgStale = true; state.fitPending = true;
+  paintEdgeRows(); plotNote(); resize2(); paintSite(); invalidate();
+  showView('site');
+  if (HELP) HELP.toast({ title:`${w} × ${d} ft plot loaded`,
+    text:'Setbacks and the ratio are whatever you last used. Change them below.' });
+}
+
+/* ---------------------------------------------------------------------------
+   Rules used — what the tool actually checks, said plainly. The point is that
+   none of this is guessed: every figure here is the one the code applies.
+--------------------------------------------------------------------------- */
+const RULE_GROUPS = [
+  { title: 'Envelope', rows: [
+    ['Setbacks', 'Per edge, in feet. A structural bay is buildable only if all four of its corners clear every setback line, so slabs never overhang.'],
+    ['Floor area ratio', 'Permissible covered area is plot area × the ratio. Whole storeys are taken while they fit, then one part storey for the slack, cut back a whole edge line at a time.'],
+    ['Height', 'A flat limit in feet, divided by the floor-to-floor to cap the storey count. Whichever of ratio, height or plot binds first is named on the brief.'],
+    ['Upper storeys', 'The form setting decides how much each plate is held back from the one below: none when extruded, a fixed inset per storey when tapered, in groups of three when stepped, accelerating when crowned.'],
+  ]},
+  { title: 'Means of escape — IBC', rows: [
+    ['Occupant load', 'Table 1004.5, by use: 200 ft² per person residential, 60 ft² assembly, 30 ft² mercantile on grade.'],
+    ['Exits per storey', '1006.3.2 — two from any storey above the occupant-load threshold, three above 500 occupants, four above 1,000.'],
+    ['Stair width', '1005.3.1 — 0.3 inches per occupant unsprinklered, 0.2 inches sprinklered, never less than 44 inches.'],
+    ['Travel distance', '1017.2 — measured along the corridor by shortest path, not as the crow flies. 200 ft, or 250 ft sprinklered.'],
+    ['Dead ends', '1020.4 — 20 ft, or 50 ft sprinklered.'],
+    ['Exit remoteness', '1007.1.1 — two exits at least a third of the plate’s diagonal apart, which is why the stairs sit at opposite ends of the longest run.'],
+  ]},
+  { title: 'Parking', rows: [
+    ['Bay size', '8′-6″ × 18′-0″, in double-loaded modules with 24 ft aisles.'],
+    ['Ramp', '1 in 8, taken off the usable area of each basement level.'],
+    ['Floor area ratio', 'Basements sit outside the ratio but inside the cost, so they add development cost with no revenue against them.'],
+  ]},
+  { title: 'Planning', rows: [
+    ['Unit areas', 'Units are cut by frontage along the corridor, inside a minimum and maximum area for their type, so a 1 bed lands near its target rather than being rounded to whole bays.'],
+    ['Access', 'Every unit shares a real edge with a corridor by construction. An edit that would break that is undone.'],
+    ['Circulation', 'Held under 21% of the plate across a sweep of 6,048 plate sizes.'],
+    ['Plannable area', 'Plans are laid on the largest rectangle in which every bay is buildable, so nothing is drawn over ground that failed the setback test.'],
+  ]},
+  { title: 'What is not checked', rows: [
+    ['Structure', 'Columns, beams and slabs are drawn to make the massing read as a building. They are not sized and carry no engineering meaning.'],
+    ['Daylight and planning law', 'No daylight angles, no rights of light, no height planes beyond the flat limit, no local zoning beyond the setbacks and ratio you enter.'],
+    ['Cost', 'Every rate is an indicative placeholder, not market data. Replace them before the numbers leave your desk.'],
+  ]},
+];
+
+function paintRulesPage(){
+  $('rulesPage').innerHTML = `
+    <div class="card card-pad">
+      <h2>The rules buildIT applies</h2>
+      <p class="sub">Everything the tool checks, and the figure it checks against.
+        What is not on this list is not checked.</p>
+    </div>
+    ${RULE_GROUPS.map(g => `<div class="card card-pad">
+      <h3>${g.title}</h3>
+      <dl class="rules">${g.rows.map(([k,v]) =>
+        `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    </div>`).join('')}`;
+}
+
+/* The same reference, but measured against the scheme on screen: the
+   Compliance tab of the workspace. */
+function paintRulesTab(){
+  const el = $('rulesSheet');
+  if (!state.options.length || !state.plan){
+    el.innerHTML = '<div class="empty-note">Generate a scheme to check it.</div>';
+    return;
+  }
+  const s = schedule(), g = egressReport(), pk = state.parking;
+  const over = s.far > state.ratio + .01;
+  const row = (ok, title, detail) =>
+    `<div class="chk-row ${ok ? 'ok' : 'bad'}">
+      <span class="pill ${ok ? 'ok' : 'bad'}">${ok ? 'Pass' : 'Check'}</span>
+      <div><b>${title}</b><span>${detail}</span></div></div>`;
+
+  const bad = g.bad.length;
+  el.innerHTML = `<h2>Compliance</h2>
+    <p class="sub">Measured against the scheme on screen, by the rules on the
+      <a href="#rules" data-view="rules">Rules used</a> page.</p>
+    ${row(!over, 'Floor area ratio',
+      `Achieved 1:${s.far.toFixed(2)} against a 1:${state.ratio} limit —
+       ${(s.used*100).toFixed(0)}% of the permissible area built.`)}
+    ${row(s.far <= state.ratio + .01 && state.cfg.stories * state.cfg.floorH <= baseCfg().heightLimit,
+      'Height', `${state.cfg.stories} storeys at ${state.cfg.floorH} ft is
+       ${state.cfg.stories * state.cfg.floorH} ft, against a ${baseCfg().heightLimit} ft limit.`)}
+    ${row(!bad, 'Means of escape', bad
+      ? `${bad} storey${bad>1?'s':''} fail: ${g.bad.map(x=>`L${x.lvl} ${x.reason || (x.fails||[]).join(', ')}`).join('; ')}`
+      : `All ${g.per.length} storeys pass travel distance, dead ends, exit count,
+         stair width and remoteness.`)}
+    ${pk ? row(!pk.short, 'Parking', pk.short
+      ? `${pk.supply} spaces over ${pk.levels.length} basements against ${pk.required} required.`
+      : `${pk.supply} spaces over ${pk.levels.length} basements against
+         ${pk.required} required, at ${Math.round(pk.gross/Math.max(1,pk.supply))} sq ft per car.`) : ''}
+    ${row(true, 'Unit access', 'Every unit shares an edge with a corridor by construction.')}
+    <p class="hint" style="margin-top:16px">Setbacks, ratio and height are the only
+      bye-laws checked. There is no daylight, zoning or structural check here.</p>`;
+}
+
+/* ---------------------------------------------------------------------------
+   Customise tab — the storey thumbnails again, but opening the wall editor.
+--------------------------------------------------------------------------- */
+function paintEditGrid(){
+  const el = $('editGrid');
+  if (!state.options.length || !state.plan){
+    el.innerHTML = '<div class="empty-note">Generate a scheme to edit it.</div>';
+    return;
+  }
+  paintPlans(el);
 }
 
 /* Occupant load, core demand and means of escape
@@ -8107,8 +8722,7 @@ function coreNote(){
      level. <b>${c.stairCount}</b> stair${c.stairCount>1?'s':''} placed separately for escape.`;
 }
 $('go').onclick=()=>generate(true);
-$('dl').onclick=download;
-$('csv').onclick=exportCSV;
+/* the export buttons live in the Schedule tab now; wired when it paints */
 $('addUnit').onclick=()=>{
   state.mix.push({ id:'u'+(state.uid++), name:'New unit', use:state.paint,
     unitArea:800, perFloor:2 });
@@ -8188,10 +8802,28 @@ function plotCentre(){ const xs=state.site.pts.map(p=>p.x), ys=state.site.pts.ma
 $('tFit').onclick=()=>{ state.fitPending=true; paintSite(); if(state.vg) frameCamera(); };
 $('tReset').onclick=()=>{ state.site=DEFAULT_PLOT(); state.drawing=false; setTool('select');
   paintEdgeRows(); plotNote(); paintSite(); invalidate(); };
-for(const [id,v] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
-  ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas'],
-  ['vwHelp','help']])
+for(const [id,v] of [['vwDash','dash'],['vwNew','site'],['vwDesign','plans'],
+  ['vwProjects','projects'],['vwPlots','plots'],['vwRules','rules'],['vwHelp','help']])
   $(id).onclick=()=>showView(v);
+
+/* the workspace tabs */
+$('wsTabs').onclick = e => {
+  const b = e.target.closest('[role=tab]'); if (b) wsTab(b.dataset.tab);
+};
+/* massing or rendered, inside the 3D tab */
+$('m3dViews').onclick = e => {
+  const b = e.target.closest('[data-v]'); if (!b) return;
+  $('m3dViews').querySelectorAll('button').forEach(x =>
+    x.setAttribute('aria-selected', String(x === b)));
+  showView(b.dataset.v);
+};
+/* wizard navigation */
+document.querySelectorAll('[data-next]').forEach(b =>
+  b.onclick = () => wizStep(state.wizStep + 1));
+document.querySelectorAll('[data-back]').forEach(b =>
+  b.onclick = () => wizStep(state.wizStep - 1));
+$('btnBrief').onclick = () => showView('site');
+$('btnMore').onclick  = () => generate(true);
 
 /* The help layer builds its own links -- in Mimar's bubble, in the quick
    answer cards, in the foot of every pop-up. They are written as anchors so
@@ -8204,19 +8836,21 @@ document.addEventListener('click', e => {
   showView(a.dataset.view);
 });
 
-/* The inputs drawer. Everything that shapes a scheme is still one click away,
-   but it is no longer the first thing the tool shows you. */
-function openPanel(on){
-  $('panel').classList.toggle('open', on);
+/* The sidebar is a drawer on a narrow screen. */
+function openSide(on){
+  $('side').classList.toggle('open', on);
   $('scrim').classList.toggle('on', on);
 }
-$('btnInputs').onclick = () => openPanel(!$('panel').classList.contains('open'));
-$('scrim').onclick = () => openPanel(false);
+$('btnMenu').onclick = () => openSide(!$('side').classList.contains('open'));
+$('scrim').onclick = () => openSide(false);
+$('snav').addEventListener('click', () => openSide(false));
 $('cSprink').onchange = e => { state.sprinklered = e.target.checked;
   paintCoreDemand(); paintInfo(); };
-$('btnGen').onclick = () => { openPanel(false); generate(true); };
+/* One button, two jobs: start a brief from anywhere else, reopen it from the
+   workspace. Generation itself is the last step of the brief. */
+$('btnGen').onclick = () => showView('site');
 window.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && $('panel').classList.contains('open')) openPanel(false);
+  if (e.key === 'Escape' && $('side').classList.contains('open')) openSide(false);
 });
 $('dimEdit').addEventListener('keydown',e=>{
   if(e.key==='Enter'){ e.preventDefault(); closeDim(true); }

@@ -228,10 +228,11 @@ function paintDash(){
 
   /* Mimar's quick answers sit at the foot of the dashboard, where someone
      who has just arrived is most likely to have a question. */
-  $('dashSheet').innerHTML = head + nums + cards
-    + '<div class="dash-help" id="quickDash"></div>';
+  $('dashSheet').innerHTML = head + nums + cards;
   if (HELP) HELP.mountQuick($('quickDash'), 'dash',
     { title:'Questions people ask', sub:'Tap one for Mimar\u2019s answer', n:4 });
+  if (HELP) HELP.mountQuick($('quickNew'), 'site',
+    { title:'Quick answers', sub:'About the site and the rules', n:4 });
 
   $('dashSheet').querySelectorAll('.step').forEach(el=>
     el.onclick = () => showView(el.dataset.go));
@@ -247,7 +248,14 @@ function paintDash(){
     const n = ($('projName').value || '').trim();
     saveProject(n || 'Untitled scheme'); paintDash();
   };
-  $('dashSheet').querySelectorAll('.pacts button').forEach(b=>{
+  wireProjectCards($('dashSheet'));
+}
+
+/* Saved-scheme cards appear on the dashboard and on My schemes, so the
+   handlers live here rather than in either of them. */
+function wireProjectCards(host){
+  if (!host) return;
+  host.querySelectorAll('.pacts button').forEach(b=>{
     b.onclick = e => {
       e.stopPropagation();
       const id = b.dataset.id;
@@ -257,7 +265,7 @@ function paintDash(){
         // a second click confirms: dialogs are refused in some embeddings, and
         // a destructive action should not depend on one
         if (b.dataset.armed === '1'){ deleteProject(id); return; }
-        $('dashSheet').querySelectorAll('.pacts button[data-act=del]')
+        host.querySelectorAll('.pacts button[data-act=del]')
           .forEach(x=>{ x.dataset.armed=''; x.textContent='Delete'; });
         b.dataset.armed = '1'; b.textContent = 'Confirm?';
         setTimeout(()=>{ if(b.dataset.armed==='1'){ b.dataset.armed=''; b.textContent='Delete'; } }, 4000);

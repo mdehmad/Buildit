@@ -150,7 +150,13 @@ function paintSheet(){
       ${fmt(s.bay)} sq ft, so any room smaller than one bay is rounded up &mdash; that is why
       small service rooms read above target. Achieved sizes more than 20% off target are
       marked in amber. Net leasable counts only unit types from the mix; circulation,
-      stairs, lifts, restrooms and plant are treated as core.</p>`;
+      stairs, lifts, restrooms and plant are treated as core.</p>
+    <div class="row" style="margin-top:18px">
+      <button class="btn sm" id="dl">Download JSON</button>
+      <button class="btn sm" id="csv">Download schedule CSV</button>
+    </div>`;
+  $('dl').onclick = download;
+  $('csv').onclick = exportCSV;
 }
 function exportCSV(){
   const s=schedule(); if(!s) return;
@@ -204,9 +210,9 @@ function paintRibbon(){
       <div class="o">${s.storeys} storeys · ${fmt(Math.round(s.footprint))} sq ft plate
         · ${Math.round(s.eff*100)}% eff · ${s.typology}</div></button>`).join('');
   $('opts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
-    applyOption(+b.dataset.i); state.reveal=1; refreshAll();
+    applyOption(+b.dataset.i); state.reveal=1; refreshAll(); wsSub();
+    if (state.wsTab) wsTab(state.wsTab);
   });
-  $('ribbon').style.display = state.options.length ? '' : 'none';
   paintInfo(); paintCoreDemand();
 }
 
@@ -330,42 +336,114 @@ const VIEW_TITLE = { dash:'Dashboard', site:'Site', mass:'Massing',
   render:'Render', plans:'Floor plans', inv:'Area schedule',
   feas:'Cost and feasibility', help:'Help & FAQ' };
 
+/* ---------------------------------------------------------------------------
+   Routing.
+
+   The application used to be one canvas with a row of view tabs over it and an
+   inputs column beside it. It is now a set of pages, the way BuildMe is: a
+   dashboard you arrive on, a brief you fill in, and a workspace you work in.
+   The workspace itself is one card with tabs.
+
+   showView keeps its old name and its old vocabulary -- 'site', 'mass',
+   'plans', 'inv' -- because fifty-odd call sites use them, and because those
+   names still describe what the caller wants to look at. What changed is where
+   each one lives: VIEWS maps a view to the page that holds it and, inside the
+   workspace, to the tab.
+--------------------------------------------------------------------------- */
+const VIEWS = {
+  dash:   { route:'dash' },
+  site:   { route:'new', step:0 },
+  brief:  { route:'new' },
+  mass:   { route:'design', tab:'3d' },
+  render: { route:'design', tab:'3d' },
+  plans:  { route:'design', tab:'plans' },
+  edit:   { route:'design', tab:'edit' },
+  inv:    { route:'design', tab:'sched' },
+  feas:   { route:'design', tab:'feas' },
+  rules:  { route:'rules' },
+  projects:{ route:'projects' },
+  plots:  { route:'plots' },
+  help:   { route:'help' },
+};
+const ROUTE_TITLE = { dash:'Dashboard', new:'New scheme', design:'Current scheme',
+  projects:'My schemes', plots:'Plot presets', rules:'Rules used', help:'Help & FAQ' };
+const NAV_FOR = { dash:'vwDash', new:'vwNew', design:'vwDesign', projects:'vwProjects',
+  plots:'vwPlots', rules:'vwRules', help:'vwHelp' };
+
 function showView(v){
-  state.view=v;
-  const three = (v==='mass'||v==='render');
-  const map={site:'paneSite',mass:'paneMass',render:'paneMass',plans:'panePlans',inv:'paneInv'};
-  $('paneSite').classList.toggle('on', v==='site');
-  $('paneMass').classList.toggle('on', three);
-  $('panePlans').classList.toggle('on', v==='plans');
-  $('paneInv').classList.toggle('on', v==='inv');
-  $('paneFeas').classList.toggle('on', v==='feas');
-  $('paneDash').classList.toggle('on', v==='dash');
-  $('paneHelp').classList.toggle('on', v==='help');
-  for(const [id,k] of [['vwDash','dash'],['vwSite','site'],['vwMass','mass'],
-    ['vwRender','render'],['vwPlans','plans'],['vwInv','inv'],['vwFeas','feas'],
-    ['vwHelp','help']])
-    $(id).classList.toggle('on',k===v);
-  $('rail').style.display = v==='site' ? '' : 'none';
-  $('floors').style.display = v==='mass' ? '' : 'none';
-  $('ribbon').style.display =
-    (v==='mass'||v==='render'||v==='plans') && state.options.length ? '' : 'none';
-  if (gMass){ gMass.visible = v==='mass'; gRender.visible = v==='render'; }
-  if(v==='site') paintSite();
-  if(three){ resize(); if(v==='render'){ state.floor=-1; buildRender(); } else paint3D(); }
-  if(v==='plans') paintPlans();
-  if(v==='inv') paintSheet();
-  if(v==='feas') paintFeas();
-  if(v==='dash') paintDash();
-  if(v==='help' && HELP) HELP.mountHelpPage($('helpPage'));
-  const t = $('viewTitle'); if (t) t.textContent = VIEW_TITLE[v] || 'buildIT';
-  const work = (v==='mass'||v==='render'||v==='plans');
-  document.querySelector('.body').classList.toggle('with-info', work);
-  if (work) paintInfo();
-  if (v !== 'site' && typeof openPanel === 'function') openPanel(false);
+  const spec = VIEWS[v] || VIEWS.dash;
+  state.view = v;
+  state.route = spec.route;
+
+  document.querySelectorAll('.page').forEach(p =>
+    p.hidden = p.dataset.view !== spec.route);
+  for (const [route,id] of Object.entries(NAV_FOR))
+    $(id).classList.toggle('on', route === spec.route);
+  /* Current scheme only appears in the nav once there is one, the way
+     BuildMe's does -- an empty workspace is not somewhere to send anyone. */
+  $('vwDesign').hidden = !state.options.length;
+
+  if (spec.route === 'design') wsTab(spec.tab || state.wsTab || 'plans');
+  if (spec.route === 'new' && spec.step != null) wizStep(spec.step);
+
+  const three = (v === 'mass' || v === 'render');
+  if (gMass){ gMass.visible = v === 'mass'; gRender.visible = v === 'render'; }
+  if (spec.route === 'new') paintSite();
+  if (three){ resize(); if (v === 'render'){ state.floor = -1; buildRender(); } else paint3D(); }
+
+  $('readout').style.display = spec.route === 'design' ? '' : 'none';
+  $('btnGen').textContent = spec.route === 'design' ? 'Change brief' : 'New scheme';
+  const t = $('viewTitle'); if (t) t.textContent = ROUTE_TITLE[spec.route] || 'buildIT';
+
+  if (spec.route === 'dash') paintDash();
+  if (spec.route === 'projects') paintProjects();
+  if (spec.route === 'plots') paintPlots();
+  if (spec.route === 'rules') paintRulesPage();
+  if (spec.route === 'help' && HELP) HELP.mountHelpPage($('helpPage'));
+
   /* Mimar follows the screen: each view gets its own greeting and its own
      rotation of questions. The guide hides itself on the help page, where
      the whole FAQ is already on screen and a floating copy of it is noise. */
-  if (HELP){ HELP.setScreen(v); HELP.hideGuide(v==='help'); }
+  if (spec.route === 'design') wsSub();
+  if (HELP){ HELP.setScreen(v); HELP.hideGuide(v === 'help'); }
+  const c = document.querySelector('.content'); if (c) c.scrollTop = 0;
+}
+
+/* Which tab of the workspace card is showing. */
+function wsTab(tab){
+  state.wsTab = tab;
+  document.querySelectorAll('#wsTabs [role=tab]').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  document.querySelectorAll('[data-panel]').forEach(p =>
+    p.hidden = p.dataset.panel !== tab);
+  if (tab === 'plans') paintPlans();
+  if (tab === 'edit')  paintEditGrid();
+  if (tab === 'sched') paintSheet();
+  if (tab === 'feas')  paintFeas();
+  if (tab === 'rules') paintRulesTab();
+  if (tab === '3d'){ resize(); if (state.view === 'render') buildRender(); else paint3D(); }
+  $('floors').style.display = (tab === '3d' && state.view === 'mass') ? '' : 'none';
+  paintInfo();
+}
+
+/* Which card of the brief wizard is showing. */
+function wizStep(n){
+  const cards = [...document.querySelectorAll('.card-q')];
+  state.wizStep = Math.max(0, Math.min(cards.length - 1, n));
+  cards.forEach((c,i) => c.hidden = i !== state.wizStep);
+  paintWizSteps();
+  if (state.wizStep === 0){ resize2(); paintSite(); }
+  if (state.wizStep === 3) paintReview();
+}
+
+/* The progress rail above the wizard. */
+const WIZ_STEPS = ['Site', 'Programme', 'Rules & core', 'Review'];
+function paintWizSteps(){
+  $('wsteps').innerHTML = WIZ_STEPS.map((label,i) =>
+    `<li class="${i===state.wizStep?'on':''}${i<state.wizStep?' done':''}" data-step="${i}">
+      <span class="n">${i < state.wizStep ? '\u2713' : i+1}</span>${label}</li>`).join('');
+  $('wsteps').querySelectorAll('li').forEach(li =>
+    li.onclick = () => wizStep(+li.dataset.step));
 }
 function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggle('on',!!m); }
 /* Inputs have moved on from the solved grid. Anything derived from that grid --
@@ -375,4 +453,16 @@ function flag(m){ const el=$('tabMsg'); el.textContent=m||''; el.classList.toggl
 function invalidate(){
   state.vgStale = true;
   if(state.options.length) flag('Inputs changed \u2014 generate again');
+}
+
+
+/* The line under the scheme name: what you are looking at, in one sentence. */
+function wsSub(){
+  const el = $('resSub'); if (!el) return;
+  const o = state.options[state.pick];
+  if (!o){ el.textContent = 'No options yet \u2014 change the brief and generate.'; return; }
+  const st = schemeStats(o);
+  el.innerHTML = `${String.fromCharCode(65 + state.pick)} &middot; ${st.name}
+    &middot; ${st.storeys} storeys &middot; ${fmt(Math.round(st.gfa))} sq ft
+    &middot; ${st.units} units`;
 }
