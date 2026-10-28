@@ -241,3 +241,82 @@ test('an unbuildable plot explains itself and offers a fix that works', async ()
   assert.ok(r.faqs >= 1, 'the pop-up should link the questions behind it');
   assert.ok(r.recovered > 0, 'the offered fix must actually produce a scheme');
 });
+
+/* The workflow: every page reachable, and the typed brief actually landing in
+   the inputs rather than being read and dropped. */
+test('every page is reachable and renders', async () => {
+  const r = await p.evaluate(() => {
+    const out = {};
+    for (const v of ['dash','site','plans','inv','feas','projects','plots','rules','help']){
+      showView(v);
+      const page = document.querySelector('.page:not([hidden])');
+      out[v] = page ? { route: page.dataset.view, filled: page.textContent.trim().length > 60 } : null;
+    }
+    showView('dash');
+    return out;
+  });
+  for (const [view, got] of Object.entries(r)){
+    assert.ok(got, `${view} shows no page at all`);
+    assert.ok(got.filled, `${view} routes to an empty ${got.route} page`);
+  }
+  assert.equal(r.plans.route, 'design', 'plans must live in the workspace');
+  assert.equal(r.site.route, 'new', 'the site drawing must live in the brief');
+});
+
+test('the workspace tabs each paint something', async () => {
+  const r = await p.evaluate(() => {
+    showView('plans');
+    const out = {};
+    for (const t of ['plans','3d','edit','sched','feas','rules']){
+      wsTab(t);
+      const panel = document.querySelector(`[data-panel="${t}"]`);
+      out[t] = panel && !panel.hidden && panel.textContent.trim().length + panel.querySelectorAll('canvas').length > 10;
+    }
+    return out;
+  });
+  for (const [tab, ok] of Object.entries(r))
+    assert.ok(ok, `the ${tab} tab shows nothing`);
+});
+
+test('a typed brief reaches the inputs', async () => {
+  const r = await p.evaluate(() => {
+    const before = { ratio: state.ratio, hl: baseCfg().heightLimit };
+    const b = parseBrief('200 by 300 ft plot, 1:8 FAR, retail ground floor, '
+      + 'offices above, 24 ft bays, 12 ft floor to floor, 4 options');
+    applyBrief(b);
+    const out = {
+      found: b.found.length,
+      plot: [Math.round(state.site.pts[1].x), Math.round(state.site.pts[2].y)],
+      ratio: state.ratio,
+      stack: [...new Set(state.stack)],
+      bay: baseCfg().bay,
+      floorH: baseCfg().floorH,
+      nOpts: +document.getElementById('sOpts').value,
+      before,
+    };
+    return out;
+  });
+  assert.ok(r.found >= 5, `expected several readings, got ${r.found}`);
+  assert.deepEqual(r.plot, [200, 300], 'the plot dimensions must be applied');
+  assert.equal(r.ratio, 8, 'the ratio must be applied');
+  assert.deepEqual(r.stack, ['retail', 'office'], 'retail should land under the offices');
+  assert.equal(r.bay, 24, 'the structural bay must be applied');
+  assert.equal(r.floorH, 12, 'floor to floor must be applied');
+  assert.equal(r.nOpts, 4, 'the option count must be applied');
+});
+
+test('land units and a vague brief are both handled', async () => {
+  const r = await p.evaluate(() => ({
+    kanal: parseBrief('2 kanal').plot,
+    marla: parseBrief('10 marla').plot,
+    vague: parseBrief('something nice please').found.length,
+    setbackAll: parseBrief('20 ft setback all round').setbackAll,
+  }));
+  // 2 kanal is 10,890 sq ft; 10 marla is 2,722
+  assert.ok(Math.abs(r.kanal.w * r.kanal.d - 10890) / 10890 < 0.05,
+    `2 kanal came out as ${r.kanal.w}x${r.kanal.d}`);
+  assert.ok(Math.abs(r.marla.w * r.marla.d - 2722) / 2722 < 0.05,
+    `10 marla came out as ${r.marla.w}x${r.marla.d}`);
+  assert.equal(r.vague, 0, 'a brief with nothing in it must claim nothing');
+  assert.equal(r.setbackAll, 20);
+});

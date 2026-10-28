@@ -676,11 +676,12 @@ details.regs[open] summary::after{content:"\2013"}
 .understood li{background:var(--bg);border:1px solid var(--sky-2);border-radius:99px;
   padding:3px 10px;font-size:12.5px}
 .understood li.def{color:var(--text-3);border-style:dashed}
-.hero-art{position:relative;min-height:220px;border-left:1px solid var(--line);
-  background:#EAF3FF;display:flex;align-items:flex-end;justify-content:center}
+.hero-art{position:relative;min-height:200px;max-height:300px;
+  border-left:1px solid var(--line);background:#EAF3FF;
+  display:flex;align-items:flex-end;justify-content:center}
 @media (max-width:1000px){.hero-art{border-left:0;border-top:1px solid var(--line);max-height:220px}}
 @media (max-width:640px){.hero-art{display:none}}
-.hero-art .mm{width:70%;height:auto;margin-bottom:-4px}
+.hero-art .mm{width:auto;height:min(100%,250px);max-width:80%;margin-bottom:-4px}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
@@ -690,14 +691,15 @@ details.regs[open] summary::after{content:"\2013"}
 .dash-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px}
 @media (max-width:1100px){.dash-grid{grid-template-columns:minmax(0,1fr)}}
 .bars{display:flex;flex-direction:column;gap:10px}
-.bar-row{display:grid;grid-template-columns:86px minmax(0,1fr) 78px;gap:10px;
+.bar-row{display:grid;grid-template-columns:86px minmax(0,1fr) 72px;gap:10px;
   align-items:center;font-size:12.5px}
 .bar-row .nm{font-weight:600}
 .bar-row .nm small{display:block;color:var(--text-3);font-weight:400}
 .bar-track{position:relative;height:16px;background:var(--bg-3);border-radius:5px;overflow:hidden}
 .bar-track i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
 .bar-track i.t{background:var(--sky-2)} .bar-track i.g{background:var(--mark)}
-.bar-row .val{text-align:right;font-family:var(--mono);color:var(--text-2)}
+.bar-row .val{text-align:right;font-family:var(--mono);color:var(--text-2);
+  font-size:11.5px;white-space:nowrap}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--text-3);flex-wrap:wrap}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;
   margin-right:6px;vertical-align:-1px}

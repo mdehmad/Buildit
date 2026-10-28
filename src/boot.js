@@ -7,7 +7,7 @@ let busy=false;
 async function generate(animate){
   if(busy) return;
   if(state.drawing) endDraw();
-  busy=true; $('go').disabled=true; $('working').classList.add('on');
+  busy=true; $('go').disabled=true; $('working').hidden=false;
   try {
   if(state.view==='site') showView('mass');
   const cfg=readCfg(); state.cfg=cfg;
@@ -84,6 +84,37 @@ async function generate(animate){
   frameCamera(); paintFloors(); paintMix(); refreshAll();
   state.reveal=animate?0:1; paint3D();
   flag('');
+  /* A scheme can solve an envelope and still plan nothing on it: a plate under
+     about 40 ft across has no room for a band of units each side of a corridor,
+     or even one side of it. That used to come back as a building with empty
+     floors and a schedule of nothing, which reads as a bug rather than as the
+     plot being too narrow. */
+  const nUnits = (state.plan||[]).filter(Boolean)
+    .reduce((a,q)=>a+q.rooms.filter(r=>!r.isCore&&r.target).length,0);
+  if (!nUnits && HELP){
+    const pl = storeyPlate(state.vg,0);
+    HELP.oops({
+      title:'There is an envelope, but nothing plans on it',
+      lead:'The massing solves, but every storey comes back empty: the plate is '
+         + 'too narrow to take a row of units and the corridor that serves them.',
+      reasons:[
+        {title:'The buildable plate is '+(pl?Math.round(pl.w)+' \u00d7 '+Math.round(pl.d)+' ft':'very small'),
+         text:'A single-loaded floor needs about 40 ft across, a double-loaded one about 70 ft.'},
+        {title:'The setbacks are what is taking the width',
+         text:'Opposite setbacks come off the same dimension, so they add up.'},
+      ],
+      fixLabel:'What widens the plate',
+      fixes:[
+        {label:'Halve every setback', run(){
+          state.site.setbacks = state.site.setbacks.map(v=>Math.max(3, Math.round(v/2)));
+          paintEdgeRows(); plotNote(); resize2(); paintSite(); invalidate(); showView('site');
+        }},
+        {label:'Open the brief', run(){ showView('site'); }},
+      ],
+      faqs:['nobuild','irregular'],
+    });
+  }
+
   if (want.length>out.length){
     const n=want.length-out.length;
     flag(`${n} scheme${n>1?'s':''} skipped \u2014 the plot is too tight to build ${n>1?'them':'it'}`);
@@ -114,7 +145,7 @@ async function generate(animate){
 /* Any throw inside generate used to leave the translucent "Solving" scrim
    covering the canvas for good, with Generate stuck disabled. */
 function endWork(){
-  $('working').classList.remove('on'); $('go').disabled=false; busy=false;
+  $('working').hidden=true; $('go').disabled=false; busy=false;
 }
 
 /* ---------- saving a file, in the artifact viewer or a plain page ---------- */
@@ -185,7 +216,9 @@ function coreNote(){
      <b>${shaft}</b> bay${shaft>1?'s':''} (${fmt(c.lifts)} ft&sup2;), held on the same grid on every
      level. <b>${c.stairCount}</b> stair${c.stairCount>1?'s':''} placed separately for escape.`;
 }
-$('go').onclick=()=>generate(true);
+/* Generating is the last act of the brief, so it hands you to the workspace
+   the way BuildMe's "Design my house" does. */
+$('go').onclick=()=>generate(true).then(()=>{ if(state.options.length) showView('plans'); });
 /* the export buttons live in the Schedule tab now; wired when it paints */
 $('addUnit').onclick=()=>{
   state.mix.push({ id:'u'+(state.uid++), name:'New unit', use:state.paint,

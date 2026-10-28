@@ -90,7 +90,9 @@ function presetYield(pre){
   const z = sizeBuilding(site, cfg);
   const vg = buildVoxelGraph(site, { ...cfg, stories: Math.max(1, z.storeys), allowed: z.allowed });
   const plate = vg.voxels.length ? storeyPlate(vg, 0) : null;
-  return { ...z, plate: plate ? plate.w * plate.d : 0, area: pre.w * pre.d };
+  return { ...z, plate: plate ? plate.w * plate.d : 0, area: pre.w * pre.d,
+    eatW: (setbacks[1] || 0) + (setbacks[3] || 0),
+    eatD: (setbacks[0] || 0) + (setbacks[2] || 0) };
 }
 
 function paintPlots(){
@@ -108,6 +110,9 @@ function paintPlots(){
         <div><dt>Permissible</dt><dd>${fmt(Math.round(y.allowed))} sq ft</dd></div>
         <div><dt>Storeys</dt><dd>${y.plate ? y.storeys : '—'}</dd></div>
       </dl>
+      ${y.plate ? '' : `<p class="hint" style="margin:-4px 0 10px">Your setbacks take
+        ${y.eatW} ft of the ${p.w} ft frontage and ${y.eatD} ft of the ${p.d} ft depth,
+        leaving no whole bay standing. Starting from this plot brings them back to fit.</p>`}
       <button class="btn sm" data-use="1">Start from this plot</button>
     </div>`).join('')}</div>
     <p class="hint" style="margin-top:14px">At 1:${state.ratio} with your current
@@ -126,10 +131,13 @@ function usePlot(w, d){
   while (state.site.setbacks.length < 4) state.site.setbacks.push(10);
   state.site.setbacks.length = 4;
   state.entrances = []; state.vgStale = true; state.fitPending = true;
+  const fitted = fitSetbacks();
   paintEdgeRows(); plotNote(); resize2(); paintSite(); invalidate();
   showView('site');
   if (HELP) HELP.toast({ title:`${w} × ${d} ft plot loaded`,
-    text:'Setbacks and the ratio are whatever you last used. Change them below.' });
+    text: fitted
+      ? `Your setbacks were too deep for a plot this size, so they came back to ${fitted.join('/')} ft. Change them below.`
+      : 'Setbacks and the ratio are whatever you last used. Change them below.' });
 }
 
 /* ---------------------------------------------------------------------------

@@ -155,6 +155,10 @@ function workflowSteps(){
 }
 
 function paintDash(){
+  /* The dashboard is BuildMe's now: a hero you describe the scheme into, four
+     headline numbers, recent work and a plot to start from. What used to be
+     the whole page is still rendered below, as the detail. */
+  paintDashHero(); paintKpis(); paintRecent(); paintPlotBars(); paintQuickPlots();
   const steps = workflowSteps();
   const solved = state.options.length > 0 && state.plan;
   const r = solved ? feasibility() : null;
